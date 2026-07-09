@@ -173,23 +173,47 @@ int main(void) {
             }
         }
 
-        // Snakes (red) - drawn on top
+        // Snakes (red) - wavy zigzag - drawn on top
         for (int i = 0; i < 5; i++) {
             Vector2 a = SquareCenter(snake_from[i]);
             Vector2 b = SquareCenter(snake_to[i]);
-            DrawLineEx(a, b, 9, (Color){200, 25, 25, 255});
-            // zigzag skin pattern
             Vector2 dir = { b.x - a.x, b.y - a.y };
             float len = sqrtf(dir.x * dir.x + dir.y * dir.y);
-            for (int j = 1; j < 8; j++) {
-                float t = j / 8.0f;
-                float side = (j % 2 == 0) ? 6.0f : -6.0f;
-                Vector2 p = { a.x + dir.x * t + side * (-dir.y / len), a.y + dir.y * t + side * (dir.x / len) };
-                DrawCircleV(p, 4, (Color){230, 50, 50, 255});
+            float nx = -dir.y / len;
+            float ny = dir.x / len;
+            int segments = 24;
+            Vector2 prev = { a.x + dir.x * 0 / segments,
+                             a.y + dir.y * 0 / segments };
+            for (int j = 1; j <= segments; j++) {
+                float t = (float)j / segments;
+                float wave = sinf(t * 6.28f * 2.5f) * 12.0f;
+                Vector2 p = { a.x + dir.x * t + nx * wave,
+                              a.y + dir.y * t + ny * wave };
+                DrawLineEx(prev, p, 10, (Color){200, 25, 25, 255});
+                // dark outline for depth
+                DrawLineEx(prev, p, 12, (Color){140, 10, 10, 100});
+                prev = p;
             }
-            // snake head (triangle-like)
-            DrawCircleV(a, 10, (Color){220, 30, 30, 255});
-            DrawCircleV(b, 8, (Color){180, 20, 20, 255});
+            // zigzag scale pattern on body
+            for (int j = 0; j < 12; j++) {
+                float t = (j + 0.5f) / 12;
+                float wave = sinf(t * 6.28f * 2.5f) * 12.0f;
+                float side = (j % 2 == 0) ? 8.0f : -8.0f;
+                Vector2 p = { a.x + dir.x * t + nx * (wave + side),
+                              a.y + dir.y * t + ny * (wave + side) };
+                DrawCircleV(p, 4, (Color){230, 80, 80, 255});
+            }
+            // snake head
+            DrawCircleV(a, 11, (Color){220, 30, 30, 255});
+            DrawCircleLinesV(a, 11, (Color){160, 10, 10, 255});
+            // two eyes
+            float eh = nx * 5, ev = ny * 5;
+            DrawCircleV((Vector2){a.x - dir.x/len*4 + eh, a.y - dir.y/len*4 + ev}, 3, WHITE);
+            DrawCircleV((Vector2){a.x - dir.x/len*4 - eh, a.y - dir.y/len*4 - ev}, 3, WHITE);
+            DrawCircleV((Vector2){a.x - dir.x/len*4 + eh, a.y - dir.y/len*4 + ev}, 1.5f, BLACK);
+            DrawCircleV((Vector2){a.x - dir.x/len*4 - eh, a.y - dir.y/len*4 - ev}, 1.5f, BLACK);
+            // tail
+            DrawCircleV(b, 6, (Color){180, 20, 20, 255});
         }
 
         // Animate snake/ladder flash
