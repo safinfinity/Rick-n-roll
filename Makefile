@@ -1,4 +1,4 @@
-CC = gcc
+CC = C:/raylib/w64devkit/bin/gcc.exe
 CFLAGS = -Wall -Wextra -O2
 LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm -lm
 SRC = $(wildcard src/*.c)

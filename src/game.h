@@ -135,5 +135,12 @@ void board_init(Game *g);
 Vector2 board_get_pos(BoardSquare *sq);
 void dice_roll(Dice *d);
 void dice_update(Dice *d);
+void dice_draw(Dice *d, int x, int y, int size);
+void battle_draw(Game *g);
+void battle_update(Game *g);
+void menu_init(void);
+int menu_update(Game *g);
+void menu_draw(Game *g);
+void board_draw(Game *g);
 
 #endif // GAME_H
