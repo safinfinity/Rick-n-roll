@@ -1,50 +1,49 @@
 #include "game.h"
-#include "dice.h"
-#include <stdlib.h>
+#include <stdio.h>
 
 void dice_roll(Dice *d) {
+    d->value = GetRandomValue(1, 6);
     d->rolling = true;
     d->rollTimer = 0;
-    d->value = 0;
+    d->rollDuration = 30;
 }
 
 void dice_update(Dice *d) {
     if (!d->rolling) return;
     d->rollTimer++;
-    d->value = (rand() % 6) + 1;
     if (d->rollTimer >= d->rollDuration) {
         d->rolling = false;
     }
 }
 
-void dice_draw(Dice *d, int x, int y, int size) {
-    Rectangle bg = {(float)x, (float)y, (float)size, (float)size};
-    DrawRectangleRec(bg, WHITE);
-    DrawRectangleLinesEx(bg, 3, DARKGRAY);
+void dice_draw(Dice *d, int x, int y) {
+    int displayVal = d->rolling ? GetRandomValue(1, 6) : d->value;
 
-    if (d->value == 0) {
-        DrawText("?", x + size/2 - 10, y + size/2 - 10, 24, DARKGRAY);
-        return;
-    }
+    DrawRectangle(x, y, 80, 80, (Color){40, 40, 60, 255});
+    DrawRectangleLines(x, y, 80, 80, (Color){255, 202, 40, 255});
 
-    int dot = size / 12;
-    int m = size / 5;
-    int cx = x + size / 2;
-    int cy = y + size / 2;
+    int cx = x + 40;
+    int cy = y + 40;
+    int dotR = 6;
+    Color dotColor = d->rolling ? (Color){200, 200, 200, 255} : (Color){255, 202, 40, 255};
 
-    Vector2 dots[7][6] = {
+    typedef struct { int dx, dy; } Dot;
+    static const Dot dots[7][9] = {
         {},
-        {{cx, cy}},
-        {{cx-m, cy-m}, {cx+m, cy+m}},
-        {{cx-m, cy-m}, {cx, cy}, {cx+m, cy+m}},
-        {{cx-m, cy-m}, {cx+m, cy-m}, {cx-m, cy+m}, {cx+m, cy+m}},
-        {{cx-m, cy-m}, {cx+m, cy-m}, {cx, cy}, {cx-m, cy+m}, {cx+m, cy+m}},
-        {{cx-m, cy-m}, {cx+m, cy-m}, {cx-m, cy}, {cx+m, cy}, {cx-m, cy+m}, {cx+m, cy+m}}
+        {{0,0}},
+        {{-12,-12},{12,12}},
+        {{-12,-12},{0,0},{12,12}},
+        {{-12,-12},{12,-12},{-12,12},{12,12}},
+        {{-12,-12},{12,-12},{0,0},{-12,12},{12,12}},
+        {{-12,-12},{12,-12},{-12,0},{12,0},{-12,12},{12,12}}
     };
 
-    if (d->value >= 1 && d->value <= 6) {
-        for (int i = 0; i < d->value; i++) {
-            DrawCircleV(dots[d->value][i], dot, BLACK);
-        }
+    int count = (displayVal >= 1 && displayVal <= 6) ? displayVal : 0;
+    for (int i = 0; i < count; i++) {
+        DrawCircle(cx + dots[displayVal][i].dx, cy + dots[displayVal][i].dy, dotR, dotColor);
     }
+
+    char buf[8];
+    sprintf(buf, "%d", displayVal);
+    DrawText(buf, x + 35, y + 85, 14, (Color){180, 180, 200, 255});
 }
