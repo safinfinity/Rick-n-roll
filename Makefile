@@ -10,7 +10,7 @@ $(OUT): $(SRC)
 	$(CC) $(SRC) -o $(OUT) $(CFLAGS) $(LDFLAGS)
 
 clean:
-	del /Q $(OUT) 2>nul
+	-del /Q $(OUT) 2>nul
 
 run: $(OUT)
 	./$(OUT)
