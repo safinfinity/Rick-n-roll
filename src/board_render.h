@@ -5,4 +5,4 @@
 
 void board_draw(Game *g);
 
-#endif // BOARD_RENDER_H
+#endif
