@@ -4,18 +4,27 @@
 #include <stdio.h>
 
 void game_init(Game *g) {
-    g->state = STATE_MENU;
+    g->state = STATE_PLAYING;
     g->currentPlayer = 0;
     g->turnCount = 0;
     g->playerCount = 2;
     g->mode = MODE_CLASSIC;
+
+    const char *names[] = {"Red", "Blue", "Green", "Yellow"};
+    Color colors[] = {RED, BLUE, GREEN, YELLOW};
+
     for (int i = 0; i < MAX_PLAYERS; i++) {
         g->players[i].id = i;
+        g->players[i].name = names[i];
+        g->players[i].color = colors[i];
         g->players[i].position = 0;
         g->players[i].finished = false;
         g->players[i].finishOrder = 0;
         g->players[i].wins = 0;
+        g->players[i].pokemon = (Pokemon){0};
     }
+
+    poke_assign_random(g->players, g->playerCount);
     board_init(g);
 }
 

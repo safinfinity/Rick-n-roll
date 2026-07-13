@@ -123,6 +123,7 @@ typedef struct {
     Dice dice;
     BattleState battle;
     int turnCount;
+    Texture2D pokeSprites[7]; // indexed by PokeType (1-6)
 } Game;
 
 // ── Function declarations ──

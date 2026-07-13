@@ -66,8 +66,14 @@ void board_draw(Game *g) {
         float tx = pos.x + offset_x;
         float ty = pos.y + offset_y;
 
-        DrawCircleV((Vector2){tx, ty}, 16, pl->color);
-        DrawCircleLinesV((Vector2){tx, ty}, 16, BLACK);
-        DrawText(pl->name, (int)(tx - 8), (int)(ty - 6), 10, WHITE);
+        Texture2D spr = g->pokeSprites[pl->pokemon.type];
+        if (spr.id > 0) {
+            float scale = 30.0f / spr.width;
+            DrawTextureEx(spr, (Vector2){tx - 15, ty - 15}, 0, scale, WHITE);
+        } else {
+            DrawCircleV((Vector2){tx, ty}, 15, pl->color);
+            DrawCircleLinesV((Vector2){tx, ty}, 15, BLACK);
+        }
+        DrawText(pl->name, (int)(tx - 8), (int)(ty + 16), 10, pl->color);
     }
 }
