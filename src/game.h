@@ -141,5 +141,8 @@ void menu_init(void);
 int menu_update(Game *g);
 void menu_draw(Game *g);
 void board_draw(Game *g);
+void game_update(Game *g);
+void battle_roll(Game *g);
+void battle_end(Game *g);
 
 #endif // GAME_H
