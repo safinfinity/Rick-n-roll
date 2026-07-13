@@ -6,4 +6,4 @@
 void board_init(Game *g);
 Vector2 board_get_pos(BoardSquare *sq);
 
-#endif // BOARD_H
+#endif
