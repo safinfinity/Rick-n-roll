@@ -7,13 +7,16 @@ void game_init(Game *g) {
     g->state = STATE_MENU;
     g->currentPlayer = 0;
     g->turnCount = 0;
-    g->playerCount = 0;
+    g->playerCount = 2;
+    g->mode = MODE_CLASSIC;
     for (int i = 0; i < MAX_PLAYERS; i++) {
+        g->players[i].id = i;
         g->players[i].position = 0;
         g->players[i].finished = false;
         g->players[i].finishOrder = 0;
         g->players[i].wins = 0;
     }
+    board_init(g);
 }
 
 void game_reset(Game *g) {
