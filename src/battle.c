@@ -10,7 +10,11 @@ void battle_draw(Game *g) {
     int atk = g->battle.attackerIdx;
     int def = g->battle.defenderIdx;
 
-    DrawRectangle(100, 200, 150, 150, g->players[atk].pokemon.color);
+    Texture2D sprAtk = g->pokeSprites[g->players[atk].pokemon.type];
+    if (sprAtk.id > 0)
+        DrawTextureEx(sprAtk, (Vector2){100, 200}, 0, 150.0f / sprAtk.width, WHITE);
+    else
+        DrawRectangle(100, 200, 150, 150, g->players[atk].pokemon.color);
     DrawRectangleLines(100, 200, 150, 150, WHITE);
 
     DrawText(poke_type_name(g->players[atk].pokemon.type), 100, 360, 18, WHITE);
@@ -24,7 +28,11 @@ void battle_draw(Game *g) {
     sprintf(hpBuf, "HP: %d/%d", g->battle.attackerHp, g->battle.attackerMaxHp);
     DrawText(hpBuf, 100, 430, 12, WHITE);
 
-    DrawRectangle(550, 200, 150, 150, g->players[def].pokemon.color);
+    Texture2D sprDef = g->pokeSprites[g->players[def].pokemon.type];
+    if (sprDef.id > 0)
+        DrawTextureEx(sprDef, (Vector2){550, 200}, 0, 150.0f / sprDef.width, WHITE);
+    else
+        DrawRectangle(550, 200, 150, 150, g->players[def].pokemon.color);
     DrawRectangleLines(550, 200, 150, 150, WHITE);
 
     DrawText(poke_type_name(g->players[def].pokemon.type), 550, 360, 18, WHITE);
