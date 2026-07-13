@@ -5,6 +5,6 @@
 
 void dice_roll(Dice *d);
 void dice_update(Dice *d);
-void dice_draw(Dice *d, int x, int y);
+void dice_draw(Dice *d, int x, int y, int size);
 
 #endif // DICE_H
