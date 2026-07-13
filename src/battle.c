@@ -1,8 +1,25 @@
 #include "game.h"
 #include "pokemon.h"
 #include <stdio.h>
+#include <stdbool.h>
+
+static Texture2D pokeSprites[7];
+static bool spritesLoaded = false;
+
+void battle_load_sprites(void) {
+    if (spritesLoaded) return;
+    const char *files[] = {"", "fire", "water", "grass", "electric", "psychic", "dragon"};
+    for (int i = 1; i <= 6; i++) {
+        char path[64];
+        sprintf(path, "assets/images/%s.png", files[i]);
+        pokeSprites[i] = LoadTexture(path);
+    }
+    spritesLoaded = true;
+}
 
 void battle_draw(Game *g) {
+    battle_load_sprites();
+
     DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){10, 10, 25, 255});
 
     DrawText("BATTLE!", WINDOW_W/2 - MeasureText("BATTLE!", 36)/2, 30, 36, (Color){255, 202, 40, 255});
@@ -10,7 +27,7 @@ void battle_draw(Game *g) {
     int atk = g->battle.attackerIdx;
     int def = g->battle.defenderIdx;
 
-    Texture2D sprAtk = g->pokeSprites[g->players[atk].pokemon.type];
+    Texture2D sprAtk = pokeSprites[g->players[atk].pokemon.type];
     if (sprAtk.id > 0)
         DrawTextureEx(sprAtk, (Vector2){100, 200}, 0, 150.0f / sprAtk.width, WHITE);
     else
@@ -28,7 +45,7 @@ void battle_draw(Game *g) {
     sprintf(hpBuf, "HP: %d/%d", g->battle.attackerHp, g->battle.attackerMaxHp);
     DrawText(hpBuf, 100, 430, 12, WHITE);
 
-    Texture2D sprDef = g->pokeSprites[g->players[def].pokemon.type];
+    Texture2D sprDef = pokeSprites[g->players[def].pokemon.type];
     if (sprDef.id > 0)
         DrawTextureEx(sprDef, (Vector2){550, 200}, 0, 150.0f / sprDef.width, WHITE);
     else

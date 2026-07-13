@@ -2,6 +2,7 @@
 #include "game.h"
 #include "board.h"
 #include "board_render.h"
+#include "battle.h"
 #include "dice.h"
 #include <stdio.h>
 
@@ -27,6 +28,7 @@ int main(void) {
     Game game = {0};
     game_init(&game);
     load_poke_sprites(&game);
+    battle_load_sprites();
 
     Dice dice = {0};
     bool wasRolling = false;
