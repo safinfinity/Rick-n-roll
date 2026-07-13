@@ -1,149 +1,62 @@
 #include "game.h"
-#include "battle.h"
-#include <stdlib.h>
+#include "pokemon.h"
 #include <stdio.h>
-#include <string.h>
-
-void init_battle(Game *g, int attacker, int defender) {
-    BattleState *b = &g->battle;
-    b->attackerIdx = attacker;
-    b->defenderIdx = defender;
-    b->rollsLeft = DICE_ROLLS_PER_BATTLE;
-    b->currentRoll = 0;
-    b->attackerHp = g->players[attacker].pokemon.hp;
-    b->defenderHp = g->players[defender].pokemon.hp;
-    b->attackerMaxHp = g->players[attacker].pokemon.maxHp;
-    b->defenderMaxHp = g->players[defender].pokemon.maxHp;
-    b->message[0] = '\0';
-    b->messageTimer = 0;
-    b->finished = false;
-    b->attackerWon = false;
-}
-
-void battle_update(Game *g) {
-    BattleState *b = &g->battle;
-    if (b->finished) return;
-
-    if (b->messageTimer > 0) {
-        b->messageTimer--;
-        return;
-    }
-
-    if (b->rollsLeft <= 0 || b->attackerHp <= 0 || b->defenderHp <= 0) {
-        b->finished = true;
-        if (b->defenderHp <= 0) b->attackerWon = true;
-        else if (b->attackerHp <= 0) b->attackerWon = false;
-        else {
-            b->attackerWon = b->attackerHp > b->defenderHp;
-        }
-
-        Player *atk = &g->players[b->attackerIdx];
-        Player *def = &g->players[b->defenderIdx];
-
-        if (b->attackerWon) {
-            def->position = 0;
-            def->pokemon.hp = def->pokemon.maxHp;
-            atk->pokemon.hp = atk->pokemon.maxHp;
-            snprintf(b->message, sizeof(b->message), "%s wins! %s sent back!", atk->name, def->name);
-        } else {
-            atk->position = 0;
-            atk->pokemon.hp = atk->pokemon.maxHp;
-            def->pokemon.hp = def->pokemon.maxHp;
-            snprintf(b->message, sizeof(b->message), "%s wins! %s sent back!", def->name, atk->name);
-        }
-        b->messageTimer = 90;
-        return;
-    }
-
-    Player *atk = &g->players[b->attackerIdx];
-    Player *def = &g->players[b->defenderIdx];
-
-    int atkRoll = (rand() % 6) + 1 + atk->pokemon.atk / 10;
-    int defRoll = (rand() % 6) + 1 + def->pokemon.def / 10;
-
-    if (poke_type_advantage(atk->pokemon.type, def->pokemon.type)) {
-        atkRoll += TYPE_ADVANTAGE_BONUS;
-        snprintf(b->message, sizeof(b->message), "Super effective! %s +%d!", atk->pokemon.name, TYPE_ADVANTAGE_BONUS);
-    } else if (poke_type_advantage(def->pokemon.type, atk->pokemon.type)) {
-        defRoll += TYPE_ADVANTAGE_BONUS;
-        snprintf(b->message, sizeof(b->message), "Super effective! %s +%d!", def->pokemon.name, TYPE_ADVANTAGE_BONUS);
-    } else {
-        snprintf(b->message, sizeof(b->message), "%s rolls %d vs %s rolls %d", atk->pokemon.name, atkRoll, def->pokemon.name, defRoll);
-    }
-
-    int damage = (atkRoll > defRoll) ? atkRoll - defRoll : 0;
-    if (damage > 0) {
-        def->pokemon.hp -= damage;
-        if (def->pokemon.hp < 0) def->pokemon.hp = 0;
-        b->defenderHp = def->pokemon.hp;
-    } else {
-        damage = defRoll - atkRoll;
-        atk->pokemon.hp -= damage;
-        if (atk->pokemon.hp < 0) atk->pokemon.hp = 0;
-        b->attackerHp = atk->pokemon.hp;
-    }
-
-    b->rollsLeft--;
-    b->messageTimer = 45;
-}
 
 void battle_draw(Game *g) {
-    BattleState *b = &g->battle;
-    Player *atk = &g->players[b->attackerIdx];
-    Player *def = &g->players[b->defenderIdx];
+    DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){10, 10, 25, 255});
 
-    DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){15, 15, 35, 255});
+    DrawText("BATTLE!", WINDOW_W/2 - MeasureText("BATTLE!", 36)/2, 30, 36, (Color){255, 202, 40, 255});
 
-    DrawText("POKEMON BATTLE!", WINDOW_W/2 - MeasureText("POKEMON BATTLE!", 32)/2, 20, 32, GOLD);
+    int atk = g->battle.attackerIdx;
+    int def = g->battle.defenderIdx;
 
-    float leftX = WINDOW_W * 0.15f;
-    float rightX = WINDOW_W * 0.65f;
-    float pokeY = 120;
+    DrawRectangle(100, 200, 150, 150, g->players[atk].pokemon.color);
+    DrawRectangleLines(100, 200, 150, 150, WHITE);
 
-    DrawCircleV((Vector2){leftX + 80, pokeY + 60}, 60, atk->pokemon.color);
-    DrawCircleLinesV((Vector2){leftX + 80, pokeY + 60}, 60, WHITE);
-    DrawText(atk->pokemon.name, (int)leftX, (int)(pokeY + 130), 20, WHITE);
-    DrawText(TextFormat("Lv.%d", atk->pokemon.atk), (int)leftX, (int)(pokeY + 155), 14, GRAY);
+    DrawText(poke_type_name(g->players[atk].pokemon.type), 100, 360, 18, WHITE);
+    DrawText(g->players[atk].name, 100, 380, 14, (Color){180, 180, 200, 255});
 
-    DrawCircleV((Vector2){rightX + 80, pokeY + 60}, 60, def->pokemon.color);
-    DrawCircleLinesV((Vector2){rightX + 80, pokeY + 60}, 60, WHITE);
-    DrawText(def->pokemon.name, (int)rightX, (int)(pokeY + 130), 20, WHITE);
-    DrawText(TextFormat("Lv.%d", def->pokemon.atk), (int)rightX, (int)(pokeY + 155), 14, GRAY);
+    DrawRectangle(100, 410, 150, 16, (Color){60, 60, 80, 255});
+    float hpPct = (float)g->battle.attackerHp / g->battle.attackerMaxHp;
+    Color hpColor = hpPct > 0.5f ? GREEN : hpPct > 0.25f ? YELLOW : RED;
+    DrawRectangle(100, 410, (int)(150 * hpPct), 16, hpColor);
+    char hpBuf[32];
+    sprintf(hpBuf, "HP: %d/%d", g->battle.attackerHp, g->battle.attackerMaxHp);
+    DrawText(hpBuf, 100, 430, 12, WHITE);
 
-    DrawText("VS", WINDOW_W/2 - 25, (int)(pokeY + 40), 40, RED);
+    DrawRectangle(550, 200, 150, 150, g->players[def].pokemon.color);
+    DrawRectangleLines(550, 200, 150, 150, WHITE);
 
-    int barW = 200, barH = 18;
-    float hpY = pokeY + 190;
+    DrawText(poke_type_name(g->players[def].pokemon.type), 550, 360, 18, WHITE);
+    DrawText(g->players[def].name, 550, 380, 14, (Color){180, 180, 200, 255});
 
-    DrawText(atk->name, (int)leftX - 10, (int)hpY, 14, atk->color);
-    DrawRectangle((int)leftX - 10, (int)(hpY + 20), barW, barH, DARKGRAY);
-    float atkRatio = (float)b->attackerHp / b->attackerMaxHp;
-    DrawRectangle((int)leftX - 10, (int)(hpY + 20), (int)(barW * atkRatio), barH, RED);
-    DrawText(TextFormat("%d/%d", b->attackerHp, b->attackerMaxHp), (int)leftX + 40, (int)(hpY + 21), 12, WHITE);
+    DrawRectangle(550, 410, 150, 16, (Color){60, 60, 80, 255});
+    hpPct = (float)g->battle.defenderHp / g->battle.defenderMaxHp;
+    hpColor = hpPct > 0.5f ? GREEN : hpPct > 0.25f ? YELLOW : RED;
+    DrawRectangle(550, 410, (int)(150 * hpPct), 16, hpColor);
+    sprintf(hpBuf, "HP: %d/%d", g->battle.defenderHp, g->battle.defenderMaxHp);
+    DrawText(hpBuf, 550, 430, 12, WHITE);
 
-    DrawText(def->name, (int)rightX - 10, (int)hpY, 14, def->color);
-    DrawRectangle((int)rightX - 10, (int)(hpY + 20), barW, barH, DARKGRAY);
-    float defRatio = (float)b->defenderHp / b->defenderMaxHp;
-    DrawRectangle((int)rightX - 10, (int)(hpY + 20), (int)(barW * defRatio), barH, RED);
-    DrawText(TextFormat("%d/%d", b->defenderHp, b->defenderMaxHp), (int)rightX + 40, (int)(hpY + 21), 12, WHITE);
+    DrawText("VS", WINDOW_W/2 - 15, 250, 28, (Color){255, 82, 82, 255});
 
-    DrawText(TextFormat("Rounds left: %d", b->rollsLeft), WINDOW_W/2 - MeasureText(TextFormat("Rounds left: %d", b->rollsLeft), 18)/2, (int)hpY + 60, 18, LIGHTGRAY);
+    DrawRectangle(50, WINDOW_H - 180, WINDOW_W - 100, 140, (Color){20, 20, 40, 255});
+    DrawRectangleLines(50, WINDOW_H - 180, WINDOW_W - 100, 140, (Color){255, 202, 40, 255});
 
-    if (b->message[0]) {
-        int mw = MeasureText(b->message, 16);
-        int my = (int)hpY + 100;
-        DrawRectangle(WINDOW_W/2 - mw/2 - 15, my - 5, mw + 30, 35, (Color){0, 0, 0, 200});
-        DrawRectangleLines(WINDOW_W/2 - mw/2 - 15, my - 5, mw + 30, 35, WHITE);
-        DrawText(b->message, WINDOW_W/2 - mw/2, my + 5, 16, WHITE);
+    DrawText(g->battle.message, 80, WINDOW_H - 150, 20, WHITE);
+
+    char rollBuf[32];
+    sprintf(rollBuf, "Rolls left: %d", g->battle.rollsLeft);
+    DrawText(rollBuf, 80, WINDOW_H - 120, 14, (Color){180, 180, 200, 255});
+
+    if (!g->battle.finished) {
+        DrawText("Press SPACE to roll dice", 80, WINDOW_H - 80, 16, (Color){255, 202, 40, 255});
+    } else {
+        DrawText("Press SPACE to continue", 80, WINDOW_H - 80, 16, (Color){0, 230, 118, 255});
     }
 
-    if (b->finished) {
-        const char *winText = b->attackerWon ? atk->name : def->name;
-        char result[64];
-        snprintf(result, sizeof(result), "%s wins the battle!", winText);
-        int rw = MeasureText(result, 24);
-        DrawRectangle(WINDOW_W/2 - rw/2 - 20, WINDOW_H - 100, rw + 40, 50, (Color){0, 0, 0, 200});
-        DrawRectangleLines(WINDOW_W/2 - rw/2 - 20, WINDOW_H - 100, rw + 40, 50, GOLD);
-        DrawText(result, WINDOW_W/2 - rw/2, WINDOW_H - 85, 24, GOLD);
+    if (g->battle.currentRoll > 0) {
+        char diceBuf[32];
+        sprintf(diceBuf, "Last roll: %d", g->battle.currentRoll);
+        DrawText(diceBuf, WINDOW_W/2 - 60, WINDOW_H - 150, 18, (Color){255, 202, 40, 255});
     }
 }
