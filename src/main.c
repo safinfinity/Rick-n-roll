@@ -75,12 +75,31 @@ int main(void) {
                 // Check if reached the end
                 if (cur->position >= BOARD_SQUARES) {
                     cur->finished = true;
+                    cur->finishOrder = 1;
+                    for (int i = 0; i < game.playerCount; i++) {
+                        if (game.players[i].finished && i != game.currentPlayer) {
+                            cur->finishOrder = game.players[i].finishOrder + 1;
+                        }
+                    }
+                }
+
+                // Check if all players finished
+                int finishedCount = 0;
+                for (int i = 0; i < game.playerCount; i++) {
+                    if (game.players[i].finished) finishedCount++;
+                }
+                if (finishedCount >= game.playerCount) {
+                    game.state = STATE_GAME_OVER;
                 }
             }
 
-            // Advance to next player
+            // Advance to next unfinished player
             if (game.state == STATE_PLAYING) {
-                game.currentPlayer = (game.currentPlayer + 1) % game.playerCount;
+                int next = game.currentPlayer;
+                do {
+                    next = (next + 1) % game.playerCount;
+                } while (game.players[next].finished && next != game.currentPlayer);
+                game.currentPlayer = next;
             }
         }
 
@@ -101,7 +120,11 @@ int main(void) {
                         game.players[def].wins++;
                     }
                     game.state = STATE_PLAYING;
-                    game.currentPlayer = (game.currentPlayer + 1) % game.playerCount;
+                    int next = game.currentPlayer;
+                    do {
+                        next = (next + 1) % game.playerCount;
+                    } while (game.players[next].finished && next != game.currentPlayer);
+                    game.currentPlayer = next;
                 }
             } else {
                 if (IsKeyPressed(KEY_SPACE)) {
@@ -110,11 +133,46 @@ int main(void) {
             }
         }
 
+        // Handle game over
+        if (game.state == STATE_GAME_OVER) {
+            if (IsKeyPressed(KEY_SPACE)) {
+                game_init(&game);
+                load_poke_sprites(&game);
+                dice = (Dice){0};
+            }
+        }
+
         BeginDrawing();
         ClearBackground((Color){15, 15, 30, 255});
 
         if (game.state == STATE_BATTLE) {
             battle_draw(&game);
+        } else if (game.state == STATE_GAME_OVER) {
+            DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){10, 10, 30, 240});
+            const char *title = "GAME OVER";
+            DrawText(title, WINDOW_W/2 - MeasureText(title, 48)/2, 200, 48, (Color){255, 202, 40, 255});
+
+            // Find the winner (finishOrder == 1)
+            for (int i = 0; i < game.playerCount; i++) {
+                if (game.players[i].finishOrder == 1) {
+                    char winBuf[128];
+                    sprintf(winBuf, "%s wins with %s!", game.players[i].name,
+                            game.players[i].pokemon.name);
+                    DrawText(winBuf, WINDOW_W/2 - MeasureText(winBuf, 28)/2, 300, 28, game.players[i].color);
+                    break;
+                }
+            }
+
+            // Show all player results
+            for (int i = 0; i < game.playerCount; i++) {
+                char resBuf[64];
+                sprintf(resBuf, "#%d %s (%s) - Wins: %d", game.players[i].finishOrder,
+                        game.players[i].name, game.players[i].pokemon.name, game.players[i].wins);
+                DrawText(resBuf, WINDOW_W/2 - MeasureText(resBuf, 18)/2, 380 + i * 30, 18,
+                         (Color){180, 180, 200, 255});
+            }
+
+            DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 550, 20, (Color){255, 202, 40, 255});
         } else {
             board_draw(&game);
             dice_draw(&dice, WINDOW_W - 120, 20);
