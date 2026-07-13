@@ -1,8 +1,8 @@
-CC = C:/raylib/w64devkit/bin/gcc.exe
-CFLAGS = -Wall -Wextra -O2
+CC = C:/msys64/mingw64/bin/gcc.exe
+CFLAGS = -Wall -O2
 LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm -lm
 SRC = $(wildcard src/*.c)
-OUT = poku-doku.exe
+OUT = Rick-n-roll.exe
 
 all: $(OUT)
 
