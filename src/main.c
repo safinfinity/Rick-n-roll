@@ -103,7 +103,7 @@ static void next_turn(Game *g) {
 }
 
 int main(void) {
-    InitWindow(WINDOW_W, WINDOW_H, "Poku-Doku");
+    InitWindow(WINDOW_W, WINDOW_H, "Rick-n-roll");
     SetTargetFPS(60);
 
     Game game = {0};
