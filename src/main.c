@@ -2,8 +2,8 @@
 #include "game.h"
 #include "board.h"
 #include "board_render.h"
-#include "dice.h"
 #include "battle.h"
+#include "dice.h"
 #include <stdio.h>
 
 static void load_poke_sprites(Game *g) {

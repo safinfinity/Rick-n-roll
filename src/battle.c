@@ -52,10 +52,8 @@ void battle_draw(Game *g) {
 
     DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){30, 40, 20, 255});
 
-    // ── Header ──
     DrawText("BATTLE!", WINDOW_W / 2 - MeasureText("BATTLE!", 32) / 2, 16, 32, (Color){255, 202, 40, 255});
 
-    // ── Enemy (defender) ── top-right area ──
     {
         Player *p = &g->players[def];
         int ex = WINDOW_W - 450, ey = 70;
@@ -77,7 +75,6 @@ void battle_draw(Game *g) {
         draw_type_badge(labX, labY + 62, p->pokemon.type);
     }
 
-    // ── Player (attacker) ── bottom-left area ──
     {
         Player *p = &g->players[atk];
         int px = 50, py = WINDOW_H - 260;
@@ -99,7 +96,6 @@ void battle_draw(Game *g) {
         draw_type_badge(labX, labY + 62, p->pokemon.type);
     }
 
-    // ── Center: VS + dice ──
     {
         DrawText("VS", WINDOW_W / 2 - 15, 200, 28, (Color){255, 82, 82, 255});
 
@@ -131,7 +127,6 @@ void battle_draw(Game *g) {
         }
     }
 
-    // ── Flash overlay ──
     if (b->flashTimer > 0) {
         int alpha = (b->flashTimer * 200) / 15;
         if (alpha > 200) alpha = 200;
@@ -140,11 +135,9 @@ void battle_draw(Game *g) {
         b->flashTimer--;
     }
 
-    // ── Type advantage check ──
     bool atkAdv = poke_type_advantage(g->players[atk].pokemon.type, g->players[def].pokemon.type);
     bool defAdv = poke_type_advantage(g->players[def].pokemon.type, g->players[atk].pokemon.type);
 
-    // ── Bottom text box ──
     int boxX = 40, boxY = WINDOW_H - 170, boxW = WINDOW_W - 80, boxH = 150;
     DrawRectangle(boxX, boxY, boxW, boxH, (Color){40, 40, 60, 255});
     DrawRectangleLines(boxX, boxY, boxW, boxH, (Color){120, 120, 140, 255});
@@ -177,7 +170,6 @@ void battle_draw(Game *g) {
         DrawText("Press SPACE to continue", boxX + 24, textY, 16, (Color){0, 230, 118, 255});
     }
 
-    // ── Sprites flash on hit ──
     if (b->flashTimer > 0 && (b->flashTimer % 4 < 2)) {
         DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){255, 255, 255, 40});
     }
