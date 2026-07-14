@@ -17,17 +17,24 @@ void dice_update(Dice *d) {
 }
 
 void dice_draw(Dice *d, int x, int y) {
+    int size = d->rolling ? 100 : 80;
+    int cx = x + size / 2;
+    int cy = y + size / 2;
+
+    if (d->rolling) {
+        int pulse = (d->rollTimer * 8) % 255;
+        DrawRectangleLinesEx((Rectangle){(float)x - 6, (float)y - 6, (float)size + 12, (float)size + 12},
+                            4, (Color){255, 202, 40, (unsigned char)pulse});
+    }
+
+    DrawRectangle(x, y, size, size, (Color){40, 40, 60, 255});
+    DrawRectangleLines(x, y, size, size, (Color){255, 202, 40, 255});
+
     int displayVal = d->rolling ? GetRandomValue(1, 6) : d->value;
-
-    DrawRectangle(x, y, 80, 80, (Color){40, 40, 60, 255});
-    DrawRectangleLines(x, y, 80, 80, (Color){255, 202, 40, 255});
-
-    int cx = x + 40;
-    int cy = y + 40;
-    int dotR = 6;
-    Color dotColor = d->rolling ? (Color){200, 200, 200, 255} : (Color){255, 202, 40, 255};
+    Color dotColor = (Color){255, 202, 40, 255};
 
     typedef struct { int dx, dy; } Dot;
+    int dSize = size / 80;
     static const Dot dots[7][9] = {
         {},
         {{0,0}},
@@ -40,10 +47,16 @@ void dice_draw(Dice *d, int x, int y) {
 
     int count = (displayVal >= 1 && displayVal <= 6) ? displayVal : 0;
     for (int i = 0; i < count; i++) {
-        DrawCircle(cx + dots[displayVal][i].dx, cy + dots[displayVal][i].dy, dotR, dotColor);
+        DrawCircle(cx + dots[displayVal][i].dx * dSize, cy + dots[displayVal][i].dy * dSize, 6 * dSize, dotColor);
     }
 
-    char buf[8];
-    sprintf(buf, "%d", displayVal);
-    DrawText(buf, x + 35, y + 85, 14, (Color){180, 180, 200, 255});
+    int tx = x + (d->rolling ? 28 : 35);
+    int ty = y + size + 5;
+    if (d->rolling) {
+        DrawText("Rolling...", tx - 15, ty, 14, (Color){255, 202, 40, (unsigned char)(128 + (d->rollTimer * 4) % 128)});
+    } else {
+        char buf[8];
+        sprintf(buf, "%d", displayVal);
+        DrawText(buf, tx - 5, ty, 14, (Color){180, 180, 200, 255});
+    }
 }

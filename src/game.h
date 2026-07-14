@@ -108,6 +108,7 @@ typedef struct {
     int defenderMaxHp;
     char message[128];
     int messageTimer;
+    int flashTimer;
     bool finished;
     bool attackerWon;
 } BattleState;
