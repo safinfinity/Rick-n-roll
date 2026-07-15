@@ -2,7 +2,7 @@
 #define BOARD_H
 
 #include "game.h"
-
+// unused for now
 void board_init(Game *g);
 Vector2 board_get_pos(BoardSquare *sq);
 int board_find_square_type(Game *g, int position);

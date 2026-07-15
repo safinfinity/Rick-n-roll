@@ -18,7 +18,7 @@ static const Color type_colors[] = {
 };
 
 static int advantage[7][7] = {
-    // NONE  FIRE  WATER GRASS ELEC PSYCH DRAGON
+// NONE  FIRE  WATER GRASS ELEC PSYCH DRAGON
     {0,    0,    0,    0,    0,    0,    0},     // NONE
     {0,    0,    0,    2,    0,    0,    0},     // FIRE > GRASS
     {0,    2,    0,    0,    0,    0,    0},     // WATER > FIRE

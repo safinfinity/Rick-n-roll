@@ -9,15 +9,15 @@
 #define WINDOW_H 800
 #define BOARD_SQUARES 30
 #define MAX_PLAYERS 4
-#define MAX_POKEMON_PARTY 3
+#define MAX_POKEMON_PARTY 3 // Max pokemon per player (unused yet — planned for Ladder Mode)
 #define DICE_ROLLS_PER_BATTLE 3
 #define BASE_HP 100
 #define TYPE_ADVANTAGE_BONUS 2
-#define MAX_LOG 10
+#define MAX_LOG 10 // Planned: circular log of events (unused yet)
 
 // ── Pokemon Types ──
 typedef enum {
-    POKE_NONE = 0,
+    POKE_NONE = 0, // enum assigns name for numbers
     POKE_FIRE = 1,
     POKE_WATER = 2,
     POKE_GRASS = 3,
@@ -28,25 +28,25 @@ typedef enum {
 
 // ── Game Modes ──
 typedef enum {
-    MODE_CLASSIC,
-    MODE_LADDER
+    MODE_CLASSIC,//0
+    MODE_LADDER //1
 } GameMode;
 
 // ── Game States ──
 typedef enum {
-    STATE_MENU,
-    STATE_MODE_SELECT,
+    STATE_MENU, //in use
+    STATE_MODE_SELECT, 
     STATE_PLAYER_COUNT,
     STATE_DRAFT,
-    STATE_PLAYING,
+    STATE_PLAYING,// in use
     STATE_ROLLING,
     STATE_MOVING,
-    STATE_BATTLE,
+    STATE_BATTLE, // in in use
     STATE_BATTLE_RESULT,
-    STATE_GAME_OVER
+    STATE_GAME_OVER // in use
 } GameState;
 
-// ── Square Types ──
+// ── Square Types ── not implemented yet
 typedef enum {
     SQ_NORMAL,
     SQ_SAFE,
@@ -64,24 +64,36 @@ typedef struct {
     PokeType type;
     int hp;
     int maxHp;
-    int atk;
+    int atk;// atk, def not used yet
     int def;
-    Color color;
+    Color color;//color → raylib Color for drawing (set from type_colors[])
 } Pokemon;
 
 // ── Player ──
-typedef struct {
+// id          → 0-3 index
+// name        → "Red", "Blue", "Green", "Yellow"
+// color       → RED, BLUE, GREEN, YELLOW
+// position    → 0 = start, 1-29 = on board, 30 = HOME
+// pokemon     → ONE Pokemon struct embedded directly (not a pointer — the Pokemon lives INSIDE the Player)
+// wins        → count of battles won
+// finished    → true when reached BOARD_SQUARES
+// finishOrder → 1 = first to finish, 2 = second, etc.
+    typedef struct {
     int id;
     const char *name;
     Color color;
     int position;
-    Pokemon pokemon;
+    Pokemon pokemon; // struct within struct
     int wins;
     bool finished;
     int finishOrder;
 } Player;
 
 // ── Board Square ──
+/*id        → display number (1-30)
+type      → SQ_NORMAL, SQ_SAFE, etc.
+screenPos → Vector2 {x, y} pixel center of this square on screen
+*/
 typedef struct {
     int id;
     SquareType type;
@@ -92,8 +104,8 @@ typedef struct {
 typedef struct {
     int value;
     bool rolling;
-    int rollTimer;
-    int rollDuration;
+    int rollTimer;//frames elapsed since roll started
+    int rollDuration;//total frames for animation (set to 30 = 0.5 sec at 60fps)
 } Dice;
 
 // ── Battle State ──
