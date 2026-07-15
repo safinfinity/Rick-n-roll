@@ -51,7 +51,7 @@ void menu_draw(Game *g) {
     if (g->state == STATE_MENU) {
         DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){15, 15, 35, 255});
 
-        DrawText("POKU-DOKU", WINDOW_W/2 - MeasureText("POKU-DOKU", 60)/2, 100, 60, GOLD);
+        DrawText("Rick N Roll", WINDOW_W/2 - MeasureText("Rick N Roll", 60)/2, 100, 60, GOLD);
         DrawText("Pokemon + Ludo Board Game", WINDOW_W/2 - MeasureText("Pokemon + Ludo Board Game", 22)/2, 175, 22, LIGHTGRAY);
 
         bool hoverC = CheckCollisionPointRec(GetMousePosition(), classicBtn);
