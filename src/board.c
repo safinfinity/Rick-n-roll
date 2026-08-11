@@ -37,20 +37,26 @@ void board_init(Game *g) {
         }
     }
 
-    g->board[2].type  = SQ_LADDER;
-    g->board[4].type  = SQ_SNAKE;
-    g->board[7].type  = SQ_SAFE;
-    g->board[9].type  = SQ_MYSTERY;
-    g->board[11].type = SQ_LADDER;
-    g->board[13].type = SQ_EVOLUTION;
-    g->board[15].type = SQ_SNAKE;
-    g->board[17].type = SQ_SAFE;
-    g->board[19].type = SQ_HABITAT;
-    g->board[21].type = SQ_MYSTERY;
-    g->board[23].type = SQ_LADDER;
-    g->board[25].type = SQ_STONE;
-    g->board[27].type = SQ_HABITAT;
-    g->board[29].type = SQ_SAFE;
+    if (g->mode == MODE_CLASSIC) {     // MODE_CLASSIC for classic map
+        g->board[7].type  = SQ_SAFE;   
+        g->board[17].type = SQ_SAFE;   
+        g->board[29].type = SQ_SAFE;   
+    } else {                           // MODE_LADDER for ladder map
+        g->board[2].type  = SQ_LADDER;
+        g->board[4].type  = SQ_SNAKE;
+        g->board[7].type  = SQ_SAFE;
+        g->board[9].type  = SQ_MYSTERY;
+        g->board[11].type = SQ_LADDER;
+        g->board[13].type = SQ_EVOLUTION;
+        g->board[15].type = SQ_SNAKE;
+        g->board[17].type = SQ_SAFE;
+        g->board[19].type = SQ_HABITAT;
+        g->board[21].type = SQ_MYSTERY;
+        g->board[23].type = SQ_LADDER;
+        g->board[25].type = SQ_STONE;
+        g->board[27].type = SQ_HABITAT;
+        g->board[29].type = SQ_SAFE;
+    }
 }
 
 Vector2 board_get_pos(BoardSquare *sq) {
