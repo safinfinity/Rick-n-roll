@@ -68,7 +68,7 @@ void board_draw(Game *g) {
 
         Texture2D spr = g->pokeSprites[pl->pokemon.type];
         if (spr.id > 0) {
-            float scale = 60.0f / spr.width;
+            float scale = 59.0f / spr.width;
             DrawTextureEx(spr, (Vector2){tx - 30, ty - 30}, 0, scale, WHITE);
         } else {
             DrawCircleV((Vector2){tx, ty}, 30, pl->color);
