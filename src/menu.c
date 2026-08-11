@@ -20,16 +20,16 @@ int menu_update(Game *g) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (CheckCollisionPointRec(mouse, classicBtn)) {
                 g->mode = MODE_CLASSIC;
-                return STATE_PLAYER_COUNT;
+                return MENU_MODE_PICKED;
             }
             if (CheckCollisionPointRec(mouse, ladderBtn)) {
                 g->mode = MODE_LADDER;
-                return STATE_PLAYER_COUNT;
+                return MENU_MODE_PICKED;
             }
         }
     }
 
-    if (g->state == STATE_PLAYER_COUNT || (g->state == STATE_MENU && g->mode != MODE_CLASSIC)) {
+    if (g->state == STATE_PLAYER_COUNT) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (CheckCollisionPointRec(mouse, p2Btn)) return 2;
             if (CheckCollisionPointRec(mouse, p3Btn)) return 3;
@@ -44,7 +44,7 @@ int menu_update(Game *g) {
         }
     }
 
-    return -1;
+    return MENU_NO_ACTION;
 }
 
 void menu_draw(Game *g) {

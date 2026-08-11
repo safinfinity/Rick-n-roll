@@ -4,6 +4,8 @@
 #include "board_render.h"
 #include "battle.h"
 #include "dice.h"
+#include "pokemon.h"  
+#include "menu.h"
 #include <stdio.h>
 
 static void load_poke_sprites(Game *g) {
@@ -33,6 +35,30 @@ int main(void) {
     bool wasRolling = false;
 
     while (!WindowShouldClose()) {
+
+        // Menu handling: only runs while on a menu screen
+        if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) { // "any menu screen?" (title OR player count)
+            int r = menu_update(&game);                                     // menu_update handles all clicks, returns a code:
+                                                                            // MENU_MODE_PICKED → a mode was clicked (Classic/Ladder)
+                                                                            // 2/3/4            → a player count was clicked
+                                                                            // MENU_NO_ACTION   → nothing clicked, keep showing menu
+            if (r == MENU_MODE_PICKED) {                                    // a mode (Classic/Ladder) was clicked
+                game.state = STATE_PLAYER_COUNT;                            // move to the "how many players?" screen
+            } else if (r >= 2 && r <= 4) {                                  // a player count (2/3/4) was clicked
+                game.playerCount = r;                                       // save how many players are playing
+                poke_assign_random(game.players, game.playerCount);         // give each player a random Pokemon
+                board_init(&game);                                          // lay out the board
+                for (int i = 0; i < game.playerCount; i++) {                // reset every player for a fresh game
+                    game.players[i].position = 0;                           // start at square 0
+                    game.players[i].finished = false;                       // nobody has reached HOME yet
+                    game.players[i].finishOrder = 0;                        // clear the finish ranking
+                    game.players[i].wins = 0;                               // clear the battle win count
+                }
+                game.currentPlayer = 0;                                     // player 0 takes the first turn
+                game.state = STATE_PLAYING;                                 // leave the menu and start the game
+            }
+        }
+
         if (IsKeyPressed(KEY_SPACE) && !dice.rolling && game.state == STATE_PLAYING) {
             dice_roll(&dice);
         }
@@ -146,7 +172,9 @@ int main(void) {
         BeginDrawing();
         ClearBackground((Color){15, 15, 30, 255});
 
-        if (game.state == STATE_BATTLE) {
+        if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) { // on a menu screen?
+            menu_draw(&game);                                               // draw the menu (it covers the whole screen)
+        } else if (game.state == STATE_BATTLE) {                            // not on a menu → normal screens
             battle_draw(&game);
         } else if (game.state == STATE_GAME_OVER) {
             DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){10, 10, 30, 240});

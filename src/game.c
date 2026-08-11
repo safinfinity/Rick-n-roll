@@ -4,11 +4,11 @@
 #include <stdio.h>
 
 void game_init(Game *g) {
-    g->state = STATE_PLAYING;
-    g->currentPlayer = 0;
-    g->turnCount = 0;
-    g->playerCount = 2;
-    g->mode = MODE_CLASSIC;
+    g->state = STATE_MENU;   // boot to title screen (was: jump straight into gameplay)
+    g->currentPlayer = 0;    // player 0 goes first
+    g->turnCount = 0;        // no turns played yet
+    g->playerCount = 0;      // set later in the menu (was hardcoded to 2)
+    g->mode = MODE_CLASSIC;  // default mode; menu lets the player pick Classic or Ladder
 
     const char *names[] = {"Red", "Blue", "Green", "Yellow"};
     Color colors[] = {RED, BLUE, GREEN, YELLOW};
