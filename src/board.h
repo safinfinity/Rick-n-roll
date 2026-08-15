@@ -2,11 +2,25 @@
 #define BOARD_H
 
 #include "game.h"
-// unused for now
+
 void board_init(Game *g);
 Vector2 board_get_pos(BoardSquare *sq);
 int board_find_square_type(Game *g, int position);
 int board_get_ladder_dest(int position);
 int board_get_snake_dest(int position);
+
+// Classic Mode geometry (48-square circular track)
+int GetStartSquare(int player);                 // 1, 13, 25, 37
+int GetSharedBoardSquare(int player, int progress); // logical square 1..48 for journey progress 1..30
+int GetNextBoardSquare(int currentSquare);      // wraps 48 -> 1
+bool IsSafeSquare(int square);
+
+// Classic Mode token rules
+bool CanDeployToken(const Token *t, int dice);  // base + roll == 6
+bool CanMoveToken(const Token *t, int dice);    // no overshoot past TOTAL_TRAVEL_STEPS
+bool IsOnSharedTrack(const Token *t);
+bool IsInHomeLane(const Token *t);
+void MoveToken(Token *t, int dice);
+void SendTokenToBase(Token *t);
 
 #endif

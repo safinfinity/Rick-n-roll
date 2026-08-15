@@ -21,7 +21,14 @@ void game_init(Game *g) {
         g->players[i].finished = false;
         g->players[i].finishOrder = 0;
         g->players[i].wins = 0;
+        g->players[i].finishedCount = 0;
         g->players[i].pokemon = (Pokemon){0};
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
+            g->players[i].tokens[k].owner = i;
+            g->players[i].tokens[k].pokemon = (Pokemon){0};
+            g->players[i].tokens[k].state = TOKEN_BASE;
+            g->players[i].tokens[k].progress = 0;
+        }
     }
 
     poke_assign_random(g->players, g->playerCount);
@@ -37,41 +44,19 @@ void game_reset(Game *g) {
     g->state = STATE_MENU;
 }
 
-// Check if two players are on the same square
-static int find_collision(Game *g, int playerIdx) {
-    for (int i = 0; i < g->playerCount; i++) {
-        if (i != playerIdx && g->players[i].position == g->players[playerIdx].position) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-// Start a battle between two players
-static void start_battle(Game *g, int attacker, int defender) {
-    g->state = STATE_BATTLE;
-    g->battle.attackerIdx = attacker;
-    g->battle.defenderIdx = defender;
-    g->battle.rollsLeft = DICE_ROLLS_PER_BATTLE;
-    g->battle.attackerHp = g->players[attacker].pokemon.hp;
-    g->battle.defenderHp = g->players[defender].pokemon.hp;
-    g->battle.attackerMaxHp = g->players[attacker].pokemon.maxHp;
-    g->battle.defenderMaxHp = g->players[defender].pokemon.maxHp;
-    g->battle.finished = false;
-    g->battle.currentRoll = 0;
-    sprintf(g->battle.message, "BATTLE! %s vs %s!",
-            poke_type_name(g->players[attacker].pokemon.type),
-            poke_type_name(g->players[defender].pokemon.type));
-    g->battle.messageTimer = 60;
-}
-
 // Process one dice roll in battle
 void battle_roll(Game *g) {
     if (g->battle.rollsLeft <= 0) return;
 
     int roll = GetRandomValue(1, 6);
-    int atkType = (int)g->players[g->battle.attackerIdx].pokemon.type;
-    int defType = (int)g->players[g->battle.defenderIdx].pokemon.type;
+    int atkType, defType;
+    if (g->mode == MODE_CLASSIC) {
+        atkType = (int)g->players[g->battle.attackerIdx].tokens[g->battle.attackerToken].pokemon.type;
+        defType = (int)g->players[g->battle.defenderIdx].tokens[g->battle.defenderToken].pokemon.type;
+    } else {
+        atkType = (int)g->players[g->battle.attackerIdx].pokemon.type;
+        defType = (int)g->players[g->battle.defenderIdx].pokemon.type;
+    }
 
     int atkBonus = (roll == atkType) ? TYPE_ADVANTAGE_BONUS : 0;
     int defBonus = (roll == defType) ? TYPE_ADVANTAGE_BONUS : 0;

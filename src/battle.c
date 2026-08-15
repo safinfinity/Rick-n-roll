@@ -45,10 +45,21 @@ static void draw_sprite(int x, int y, Texture2D *tex) {
     }
 }
 
+// Pokemon involved in the battle (token-aware in Classic mode).
+static Pokemon* battle_pokemon(Game *g, bool isDefender) {
+    int idx = isDefender ? g->battle.defenderIdx : g->battle.attackerIdx;
+    int tok = isDefender ? g->battle.defenderToken : g->battle.attackerToken;
+    return (g->mode == MODE_CLASSIC)
+        ? &g->players[idx].tokens[tok].pokemon
+        : &g->players[idx].pokemon;
+}
+
 void battle_draw(Game *g) {
     BattleState *b = &g->battle;
     int atk = b->attackerIdx;
     int def = b->defenderIdx;
+    Pokemon *atkPok = battle_pokemon(g, false);
+    Pokemon *defPok = battle_pokemon(g, true);
 
     DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){30, 40, 20, 255});
 
@@ -61,7 +72,7 @@ void battle_draw(Game *g) {
         int labX = ex + SPRITE_W + 16, labY = ey + 10;
 
         DrawRectangleLinesEx((Rectangle){(float)sx - 2, (float)sy - 2, (float)SPRITE_W + 4, (float)SPRITE_H + 4}, 2, (Color){50, 50, 50, 255});
-        draw_sprite(sx, sy, &g->pokeSprites[p->pokemon.type]);
+        draw_sprite(sx, sy, &g->pokeSprites[defPok->type]);
         DrawRectangleLinesEx((Rectangle){(float)sx, (float)sy, (float)SPRITE_W, (float)SPRITE_H}, 2, WHITE);
 
         DrawText(p->name, labX, labY, 16, BLACK);
@@ -72,7 +83,7 @@ void battle_draw(Game *g) {
         draw_hp_bar(labX, labY + 28, 130, b->defenderHp, b->defenderMaxHp);
         draw_hp_text(labX, labY + 44, b->defenderHp, b->defenderMaxHp);
 
-        draw_type_badge(labX, labY + 62, p->pokemon.type);
+        draw_type_badge(labX, labY + 62, defPok->type);
     }
 
     {
@@ -82,7 +93,7 @@ void battle_draw(Game *g) {
         int labX = px, labY = py + 8;
 
         DrawRectangleLinesEx((Rectangle){(float)sx - 2, (float)sy - 2, (float)SPRITE_W + 4, (float)SPRITE_H + 4}, 2, (Color){50, 50, 50, 255});
-        draw_sprite(sx, sy, &g->pokeSprites[p->pokemon.type]);
+        draw_sprite(sx, sy, &g->pokeSprites[atkPok->type]);
         DrawRectangleLinesEx((Rectangle){(float)sx, (float)sy, (float)SPRITE_W, (float)SPRITE_H}, 2, WHITE);
 
         DrawText(p->name, labX, labY, 16, BLACK);
@@ -93,7 +104,7 @@ void battle_draw(Game *g) {
         draw_hp_bar(labX, labY + 28, 130, b->attackerHp, b->attackerMaxHp);
         draw_hp_text(labX, labY + 44, b->attackerHp, b->attackerMaxHp);
 
-        draw_type_badge(labX, labY + 62, p->pokemon.type);
+        draw_type_badge(labX, labY + 62, atkPok->type);
     }
 
     {
@@ -135,8 +146,8 @@ void battle_draw(Game *g) {
         b->flashTimer--;
     }
 
-    bool atkAdv = poke_type_advantage(g->players[atk].pokemon.type, g->players[def].pokemon.type);
-    bool defAdv = poke_type_advantage(g->players[def].pokemon.type, g->players[atk].pokemon.type);
+    bool atkAdv = poke_type_advantage(atkPok->type, defPok->type);
+    bool defAdv = poke_type_advantage(defPok->type, atkPok->type);
 
     int boxX = 40, boxY = WINDOW_H - 170, boxW = WINDOW_W - 80, boxH = 150;
     DrawRectangle(boxX, boxY, boxW, boxH, (Color){40, 40, 60, 255});

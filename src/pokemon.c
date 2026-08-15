@@ -124,3 +124,27 @@ void poke_assign_random(Player *players, int count) {
         players[i].pokemon = poke_create(starter_pool[idx].name, starter_pool[idx].type);
     }
 }
+
+// Classic Mode: each player gets 4 distinct Pokemon sampled (without replacement)
+// from the 6-Pokemon pool. Fisher-Yates shuffle keeps it fair and independent
+// per player. Each of the 4 tokens starts in its base.
+void poke_assign_party(Player *players, int count) {
+    int pool[STARTER_COUNT];
+    for (int p = 0; p < count; p++) {
+        for (int i = 0; i < STARTER_COUNT; i++) pool[i] = i;
+        for (int i = STARTER_COUNT - 1; i > 0; i--) {
+            int j = rand() % (i + 1);
+            int tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+        }
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
+            players[p].tokens[k].owner = p;
+            players[p].tokens[k].pokemon = poke_create(starter_pool[pool[k]].name,
+                                                       starter_pool[pool[k]].type);
+            players[p].tokens[k].state = TOKEN_BASE;
+            players[p].tokens[k].progress = 0;
+        }
+        players[p].finishedCount = 0;
+        players[p].finished = false;
+        players[p].finishOrder = 0;
+    }
+}
