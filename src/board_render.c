@@ -41,14 +41,30 @@ static const char* square_label(SquareType t) {
 }
 
 static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
-    Color typeC = poke_type_color(t->pokemon.type);
-    DrawCircleV(pos, 10, typeC);
-    DrawCircleLinesV(pos, 10, pl->color);
-    DrawCircleLinesV(pos, 10, (Color){10, 10, 15, 255});
     Texture2D spr = g->pokeSprites[t->pokemon.type];
+
     if (spr.id > 0) {
-        float scale = 18.0f / spr.width;
-        DrawTextureEx(spr, (Vector2){pos.x - 9, pos.y - 9}, 0, scale, WHITE);
+        // The board cell is 44x44.
+        // Use a 40px sprite so it is large but stays inside the cell.
+        float spriteSize = 40.0f;
+        float scale = spriteSize / (float)spr.width;
+
+        DrawTextureEx(
+            spr,
+            (Vector2){
+                pos.x - spriteSize / 2.0f,
+                pos.y - spriteSize / 2.0f
+            },
+            0.0f,
+            scale,
+            WHITE
+        );
+    } else {
+        Color typeC = poke_type_color(t->pokemon.type);
+
+        DrawCircleV(pos, 18, typeC);
+        DrawCircleLinesV(pos, 18, pl->color);
+        DrawCircleLinesV(pos, 18, (Color){10, 10, 15, 255});
     }
 }
 
