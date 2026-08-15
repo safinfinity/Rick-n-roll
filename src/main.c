@@ -70,7 +70,7 @@ static void start_battle_tokens(Game *g, int atkPlayer, int atkToken, int defPla
     g->battle.messageTimer = 60;
 }
 
-// Re-count the current player's finished tokens; all 4 home = victory.
+// Re-count the current player's finished tokens; all of them home = victory.
 static void check_finish(Game *g) {
     Player *p = &g->players[g->currentPlayer];
     int fin = 0;
@@ -140,8 +140,9 @@ static void draw_game_over(Game *g) {
         }
         for (int i = 0; i < g->playerCount; i++) {
             char resBuf[128];
-            sprintf(resBuf, "#%d %s - Home %d/4 - Wins: %d", g->players[i].finishOrder,
-                    g->players[i].name, g->players[i].finishedCount, g->players[i].wins);
+            sprintf(resBuf, "#%d %s - Home %d/%d - Wins: %d", g->players[i].finishOrder,
+                    g->players[i].name, g->players[i].finishedCount, TOKENS_PER_PLAYER,
+                    g->players[i].wins);
             DrawText(resBuf, WINDOW_W/2 - MeasureText(resBuf, 18)/2, 350 + i * 32, 18, (Color){180, 180, 200, 255});
         }
     } else {
@@ -174,7 +175,7 @@ int main(void) {
 
     Dice dice = {0};
     bool wasRolling = false;
-    bool awaitingTokenChoice = false; // classic: waiting for a 1-4 key press
+    bool awaitingTokenChoice = false; // classic: waiting for a token key press
     int turnRoll = 0;                 // classic: dice value of the current turn
 
     while (!WindowShouldClose()) {
@@ -287,7 +288,7 @@ int main(void) {
             }
         }
 
-        // Classic mode: player picks which token acts (keys 1-4)
+        // Classic mode: player picks which token acts (keys 1-2)
         if (awaitingTokenChoice && game.state == STATE_PLAYING) {
             int pick = -1;
             if (IsKeyPressed(KEY_ONE)) pick = 0;
@@ -400,7 +401,9 @@ int main(void) {
                 DrawText(line, 20, 48, 14, (Color){180, 180, 200, 255});
 
                 if (awaitingTokenChoice) {
-                    DrawText("Press 1-4 to choose a Pokemon to move", 20, 80, 18, (Color){255, 202, 40, 255});
+                    char prompt[64];
+                    sprintf(prompt, "Press 1-%d to choose a Pokemon to move", TOKENS_PER_PLAYER);
+                    DrawText(prompt, 20, 80, 18, (Color){255, 202, 40, 255});
                 }
             } else {
                 char pokeBuf[64];

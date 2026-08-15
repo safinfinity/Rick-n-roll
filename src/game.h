@@ -7,14 +7,14 @@
 // ── Constants ──
 #define WINDOW_W 1200
 #define WINDOW_H 800
-#define BOARD_SIZE 48            // Classic mode: shared circular Ludo track (wraps 48 -> 1)
+#define BOARD_SIZE 52            // Classic mode: 52-cell Ludo cross track (wraps 52 -> 1)
 #define BOARD_SQUARES 30         // Ladder mode: single-token linear board
 #define MAX_PLAYERS 4
-#define TOKENS_PER_PLAYER 4
+#define TOKENS_PER_PLAYER 2      // Classic mode: 2 Pokemon tokens per player
 #define POKEMON_POOL_SIZE 6
-#define SHARED_TRACK_STEPS 30    // steps on shared circular track before home lane
+#define SHARED_TRACK_STEPS 52    // steps on shared cross track before home lane
 #define HOME_STEPS 6             // steps through the private home lane
-#define TOTAL_TRAVEL_STEPS 36    // SHARED_TRACK_STEPS + HOME_STEPS
+#define TOTAL_TRAVEL_STEPS 58    // SHARED_TRACK_STEPS + HOME_STEPS
 #define MAX_POKEMON_PARTY 3 // Max pokemon per player (unused yet — planned for Ladder Mode)
 #define DICE_ROLLS_PER_BATTLE 3
 #define BASE_HP 100
@@ -79,16 +79,16 @@ typedef struct {
 // One Pokemon piece on the Ludo board. Each player owns TOKENS_PER_PLAYER.
 typedef enum {
     TOKEN_BASE = 0,     // in the base yard, needs a roll of 6 to deploy
-    TOKEN_ACTIVE,       // on the shared 48-square circular track (progress 1..30)
-    TOKEN_HOME,         // inside its owner's private home lane (progress 31..35)
-    TOKEN_FINISHED      // reached the final goal (progress 36)
+    TOKEN_ACTIVE,       // on the shared 52-cell cross track (progress 1..52)
+    TOKEN_HOME,         // inside its owner's private home lane (progress 53..57)
+    TOKEN_FINISHED      // reached the final goal (progress 58)
 } TokenState;
 
 typedef struct {
     int owner;          // owning player id (0-3)
     Pokemon pokemon;    // the Pokemon identity of this token
     TokenState state;
-    int progress;       // 0 = base; 1..30 shared track; 31..35 home lane; 36 = goal
+    int progress;       // 0 = base; 1..52 shared track; 53..57 home lane; 58 = goal
 } Token;
 
 // ── Player ──
@@ -99,7 +99,7 @@ typedef struct {
 // pokemon     → Ladder Mode: ONE Pokemon struct embedded directly (not a pointer)
 // tokens      → Classic Mode: TOKENS_PER_PLAYER tokens, each with own Pokemon
 // wins        → count of battles won
-// finished    → true when the player finished (Classic: all 4 tokens home)
+// finished    → true when the player finished (Classic: all tokens home)
 // finishOrder → 1 = first to finish, 2 = second, etc.
 // finishedCount → Classic Mode: how many of this player's tokens reached the goal
     typedef struct {
@@ -116,7 +116,7 @@ typedef struct {
 } Player;
 
 // ── Board Square ──
-/*id        → display number (1-30)
+/*id        → display number (1-52)
 type      → SQ_NORMAL, SQ_SAFE, etc.
 screenPos → Vector2 {x, y} pixel center of this square on screen
 */

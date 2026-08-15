@@ -125,9 +125,9 @@ void poke_assign_random(Player *players, int count) {
     }
 }
 
-// Classic Mode: each player gets 4 distinct Pokemon sampled (without replacement)
-// from the 6-Pokemon pool. Fisher-Yates shuffle keeps it fair and independent
-// per player. Each of the 4 tokens starts in its base.
+// Classic Mode: each player gets TOKENS_PER_PLAYER (2) distinct Pokemon sampled
+// (without replacement) from the 6-Pokemon pool. Fisher-Yates shuffle keeps it
+// fair and independent per player. Each token starts in its base.
 void poke_assign_party(Player *players, int count) {
     int pool[STARTER_COUNT];
     for (int p = 0; p < count; p++) {

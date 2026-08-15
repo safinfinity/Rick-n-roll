@@ -10,16 +10,32 @@
 #define BOARD_X 60
 #define BOARD_Y 140
 
-// ── Classic board layout (48-cell ring on a 13x13 grid) ──
-#define RING_N 13
-#define RING_CELL 48.0f
-#define RING_X 40.0f
-#define RING_Y 120.0f
+// ── Classic board layout (52-cell Ludo cross on a 15x15 grid) ──
+#define LUDO_GRID 15
+#define LUDO_CELL 44.0f
+#define LUDO_X 30.0f
+#define LUDO_Y 100.0f
+
+// 52-cell common path on the 15x15 grid (from bocaletto-luca/Ludo).
+// Cell (r,c) = row r, column c, 0-indexed; index 0 = Red's start, then
+// 13 = Blue, 26 = Yellow, 39 = Green.
+static const int path_r[BOARD_SIZE] = {
+    6,6,6,6,6,6, 5,4,3,2,1,0, 0,0, 1,2,3,4,5, 6,6,6,6,6,6, 7,8, 8,8,8,8,8,
+    9,10,11,12,13,14, 14,14, 13,12,11,10,9, 8,8,8,8,8,8, 7
+};
+static const int path_c[BOARD_SIZE] = {
+    0,1,2,3,4,5, 6,6,6,6,6,6, 7,8, 8,8,8,8,8, 9,10,11,12,13,14, 14,14,
+    13,12,11,10,9, 8,8,8,8,8,8, 7,6, 6,6,6,6,6, 5,4,3,2,1,0, 0
+};
+
+static Vector2 ludo_pos(int r, int c) {
+    return (Vector2){ LUDO_X + (c + 0.5f) * LUDO_CELL, LUDO_Y + (r + 0.5f) * LUDO_CELL };
+}
 
 // ── Classic Mode geometry ──
 
 int GetStartSquare(int player) {
-    static const int starts[MAX_PLAYERS] = {1, 13, 25, 37};
+    static const int starts[MAX_PLAYERS] = {1, 14, 40, 27}; // Red, Blue, Green, Yellow
     if (player < 0 || player >= MAX_PLAYERS) return 1;
     return starts[player];
 }
@@ -35,8 +51,8 @@ int GetNextBoardSquare(int currentSquare) {
 
 bool IsSafeSquare(int square) {
     switch (square) {
-        case 1: case 13: case 25: case 37: // starting squares
-        case 5: case 17: case 29: case 41: // mid-sector star squares
+        case 1: case 14: case 27: case 40: // starting squares (Red, Blue, Yellow, Green)
+        case 7: case 20: case 33: case 46: // mid-sector star squares
             return true;
         default:
             return false;
@@ -72,46 +88,42 @@ void SendTokenToBase(Token *t) {
     t->state = TOKEN_BASE;
 }
 
-// Screen position of logical square (1..48) on the 13x13 ring, numbered clockwise
-// from the bottom-left corner. Starts: P0=1(bottom-left), P1=13(bottom-right),
-// P2=25(top-right), P3=37(top-left).
-static Vector2 ring_pos(int square) {
-    int r, c;
-    if (square >= 1 && square <= 13)      { r = RING_N - 1; c = square - 1; }
-    else if (square >= 14 && square <= 24){ r = RING_N - 1 - (square - 13); c = RING_N - 1; }
-    else if (square >= 25 && square <= 37){ r = 0; c = RING_N - 1 - (square - 25); }
-    else                                  { r = square - 37; c = 0; } // 38..48, left side
-    return (Vector2){ RING_X + (c + 0.5f) * RING_CELL, RING_Y + (r + 0.5f) * RING_CELL };
-}
-
-static Vector2 ring_cell(int r, int c) {
-    return (Vector2){ RING_X + (c + 0.5f) * RING_CELL, RING_Y + (r + 0.5f) * RING_CELL };
-}
-
-// Home lanes run 6 cells from the shared-track entry straight in toward the center.
-// Base yards are 2x2 clusters in the four inner corners.
+// Home lanes run 6 cells from the shared-track entry straight into the center.
+// Base yards hold the 2 token spots in the four corner quadrants.
 static void classic_home_and_base(Game *g) {
-    // entry grid coords per player (computed from GetSharedBoardSquare(p,30))
-    const int sr[MAX_PLAYERS] = {0, 4, 12, 7};
-    const int sc[MAX_PLAYERS] = {6, 0, 5, 12};
-    const int dr[MAX_PLAYERS] = {1, 0, -1, 0}; // inward direction (toward center r=6,c=6)
-    const int dc[MAX_PLAYERS] = {0, 1, 0, -1};
-    // base inner-corner rows/cols
-    const int br[MAX_PLAYERS][2] = {{10, 11}, {10, 11}, {1, 2}, {1, 2}};
-    const int bc[MAX_PLAYERS][2] = {{1, 2}, {10, 11}, {10, 11}, {1, 2}};
+    // Home lane grid coords per player (inward toward center (7,7)).
+    static const int hr[MAX_PLAYERS][HOME_STEPS] = {
+        {7, 7, 7, 7, 7, 7},       // Red:   row 7, cols 1..6 (enters from (7,0))
+        {1, 2, 3, 4, 5, 6},       // Blue:  col 7, rows 1..6 (enters from (0,7))
+        {13, 12, 11, 10, 9, 8},   // Green: col 7, rows 13..8 (enters from (14,7))
+        {7, 7, 7, 7, 7, 7}        // Yellow: row 7, cols 13..8 (enters from (7,14))
+    };
+    static const int hc[MAX_PLAYERS][HOME_STEPS] = {
+        {1, 2, 3, 4, 5, 6},
+        {7, 7, 7, 7, 7, 7},
+        {7, 7, 7, 7, 7, 7},
+        {13, 12, 11, 10, 9, 8}
+    };
+    // Base token spots: 2 diagonal cells of each corner 2x2 yard.
+    static const int br[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
+        {2, 4},    // Red (top-left yard)
+        {2, 4},    // Blue (top-right yard)
+        {10, 12},  // Green (bottom-right yard)
+        {10, 12}   // Yellow (bottom-left yard)
+    };
+    static const int bc[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
+        {2, 4},    // Red cols 2,4
+        {10, 12},  // Blue cols 10,12
+        {10, 12},  // Green cols 10,12
+        {2, 4}     // Yellow cols 2,4
+    };
 
     for (int p = 0; p < MAX_PLAYERS; p++) {
-        int r = sr[p], c = sc[p];
         for (int i = 0; i < HOME_STEPS; i++) {
-            r += dr[p];
-            c += dc[p];
-            g->homeLanePos[p][i] = ring_cell(r, c);
+            g->homeLanePos[p][i] = ludo_pos(hr[p][i], hc[p][i]);
         }
-        int t = 0;
-        for (int i = 0; i < 2 && t < TOKENS_PER_PLAYER; i++) {
-            for (int j = 0; j < 2 && t < TOKENS_PER_PLAYER; j++) {
-                g->basePos[p][t++] = ring_cell(br[p][i], bc[p][j]);
-            }
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
+            g->basePos[p][k] = ludo_pos(br[p][k], bc[p][k]);
         }
     }
 }
@@ -125,7 +137,7 @@ void board_init(Game *g) {
         for (int i = 0; i < BOARD_SIZE; i++) {
             g->board[i].id = i + 1;
             g->board[i].type = IsSafeSquare(i + 1) ? SQ_SAFE : SQ_NORMAL;
-            g->board[i].screenPos = ring_pos(i + 1);
+            g->board[i].screenPos = ludo_pos(path_r[i], path_c[i]);
         }
         classic_home_and_base(g);
         return;
@@ -206,30 +218,30 @@ int board_get_snake_dest(int position) {
 #include <stdio.h>
 
 int main(void) {
-    // Start squares
+    // Start squares: Red, Blue, Green, Yellow
     assert(GetStartSquare(0) == 1);
-    assert(GetStartSquare(1) == 13);
-    assert(GetStartSquare(2) == 25);
-    assert(GetStartSquare(3) == 37);
+    assert(GetStartSquare(1) == 14);
+    assert(GetStartSquare(2) == 40);
+    assert(GetStartSquare(3) == 27);
 
     // Wraparound
-    assert(GetNextBoardSquare(48) == 1);
+    assert(GetNextBoardSquare(52) == 1);
     assert(GetNextBoardSquare(1) == 2);
 
-    // Player-specific shared squares: 30 steps = 30th shared square, no home yet
+    // Player-specific shared squares: 52 steps = last shared square, no home yet
     assert(GetSharedBoardSquare(0, 1) == 1);
-    assert(GetSharedBoardSquare(0, 30) == 30);
-    assert(GetSharedBoardSquare(1, 1) == 13);
-    assert(GetSharedBoardSquare(1, 30) == 42);
-    assert(GetSharedBoardSquare(2, 1) == 25);
-    assert(GetSharedBoardSquare(2, 30) == 6);
-    assert(GetSharedBoardSquare(3, 1) == 37);
-    assert(GetSharedBoardSquare(3, 30) == 18);
+    assert(GetSharedBoardSquare(0, 52) == 52);
+    assert(GetSharedBoardSquare(1, 1) == 14);
+    assert(GetSharedBoardSquare(1, 52) == 13);
+    assert(GetSharedBoardSquare(2, 1) == 40);
+    assert(GetSharedBoardSquare(2, 52) == 39);
+    assert(GetSharedBoardSquare(3, 1) == 27);
+    assert(GetSharedBoardSquare(3, 52) == 26);
 
     // Safe squares: starts + mid-sector stars
-    assert(IsSafeSquare(1) && IsSafeSquare(13) && IsSafeSquare(25) && IsSafeSquare(37));
-    assert(IsSafeSquare(5) && IsSafeSquare(17) && IsSafeSquare(29) && IsSafeSquare(41));
-    assert(!IsSafeSquare(2) && !IsSafeSquare(48) && !IsSafeSquare(30));
+    assert(IsSafeSquare(1) && IsSafeSquare(14) && IsSafeSquare(27) && IsSafeSquare(40));
+    assert(IsSafeSquare(7) && IsSafeSquare(20) && IsSafeSquare(33) && IsSafeSquare(46));
+    assert(!IsSafeSquare(2) && !IsSafeSquare(52) && !IsSafeSquare(30));
 
     // Deployment: only exact 6
     Token t = {0};
@@ -240,39 +252,39 @@ int main(void) {
 
     // Overshoot rejection
     t.state = TOKEN_ACTIVE;
-    t.progress = 34;
-    assert(!CanMoveToken(&t, 3)); // 34+3 > 36
-    assert(CanMoveToken(&t, 2));  // 34+2 == 36
+    t.progress = 56;
+    assert(!CanMoveToken(&t, 3)); // 56+3 > 58
+    assert(CanMoveToken(&t, 2));  // 56+2 == 58
     MoveToken(&t, 2);
-    assert(t.progress == 36 && t.state == TOKEN_FINISHED);
+    assert(t.progress == 58 && t.state == TOKEN_FINISHED);
 
-    // 30 shared + 6 home = 36
+    // 52 shared + 6 home = 58
     t.state = TOKEN_ACTIVE;
-    t.progress = 30;
+    t.progress = 52;
     MoveToken(&t, 1);
-    assert(t.progress == 31 && t.state == TOKEN_HOME);
+    assert(t.progress == 53 && t.state == TOKEN_HOME);
     MoveToken(&t, 6);
-    assert(t.progress == 36 && t.state == TOKEN_FINISHED);
+    assert(t.progress == 58 && t.state == TOKEN_FINISHED);
 
     // Defeated token returns to base
     SendTokenToBase(&t);
     assert(t.state == TOKEN_BASE && t.progress == 0);
 
-    // board_init fills all 48 shared squares in a ring with ids 1..48
+    // board_init fills all 52 shared squares with ids 1..52 on the cross
     Game g = {0};
     g.mode = MODE_CLASSIC;
     board_init(&g);
-    assert(g.board[0].id == 1 && g.board[47].id == 48);
-    assert(g.board[0].type == SQ_SAFE && g.board[6].type == SQ_NORMAL);
+    assert(g.board[0].id == 1 && g.board[51].id == 52);
+    assert(g.board[0].type == SQ_SAFE && g.board[5].type == SQ_NORMAL);
     for (int i = 0; i < BOARD_SIZE; i++) {
         assert(g.board[i].id == i + 1);
-        assert(g.board[i].screenPos.x >= RING_X && g.board[i].screenPos.y >= RING_Y);
+        assert(g.board[i].screenPos.x >= LUDO_X && g.board[i].screenPos.y >= LUDO_Y);
     }
-    // ring corners land on the four start squares
-    assert(g.board[0].screenPos.y == RING_Y + 12.5f * RING_CELL);          // square 1 bottom-left
-    assert(g.board[12].screenPos.y == RING_Y + 12.5f * RING_CELL);         // square 13 bottom-right
-    assert(g.board[24].screenPos.y == RING_Y + 0.5f * RING_CELL);          // square 25 top-right
-    assert(g.board[36].screenPos.y == RING_Y + 0.5f * RING_CELL);          // square 37 top-left
+    // Cross arm start positions (grid coords from path table)
+    assert(g.board[0].screenPos.x  == LUDO_X + 0.5f * LUDO_CELL);   // square 1: (6,0)
+    assert(g.board[13].screenPos.y == LUDO_Y + 0.5f * LUDO_CELL);   // square 14: (0,8)
+    assert(g.board[26].screenPos.x == LUDO_X + 14.5f * LUDO_CELL);  // square 27: (8,14)
+    assert(g.board[39].screenPos.y == LUDO_Y + 14.5f * LUDO_CELL);  // square 40: (14,6)
 
     printf("test_classic: all assertions passed\n");
     return 0;

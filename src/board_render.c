@@ -8,11 +8,11 @@
 #define BOARD_X 60
 #define BOARD_Y 140
 
-// Classic ring layout (must match board.c)
-#define RING_N 13
-#define RING_CELL 48.0f
-#define RING_X 40.0f
-#define RING_Y 120.0f
+// Classic Ludo layout (must match board.c)
+#define LUDO_GRID 15
+#define LUDO_CELL 44.0f
+#define LUDO_X 30.0f
+#define LUDO_Y 100.0f
 
 static Color square_color(SquareType t) {
     switch (t) {
@@ -53,38 +53,54 @@ static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
 }
 
 static void draw_classic_board(Game *g) {
-    float bw = RING_N * RING_CELL + 40;
-    DrawRectangle((int)RING_X - 20, (int)RING_Y - 20, (int)bw, (int)bw, (Color){25, 25, 45, 255});
-    DrawRectangleLinesEx((Rectangle){RING_X - 20, RING_Y - 20, bw, bw}, 2, (Color){90, 90, 120, 255});
+    float bw = LUDO_GRID * LUDO_CELL;
+    DrawRectangle((int)LUDO_X - 16, (int)LUDO_Y - 16, (int)bw + 32, (int)bw + 32, (Color){25, 25, 45, 255});
+    DrawRectangleLinesEx((Rectangle){LUDO_X - 16, LUDO_Y - 16, bw + 32, bw + 32}, 2, (Color){90, 90, 120, 255});
 
-    // Shared 48-square track
+    // Corner base yards (6x6 quadrants) in each player's color
+    static const Color baseColors[4] = {RED, BLUE, GREEN, YELLOW};
+    static const int qr[4] = {0, 0, 9, 9}; // quadrant row offsets (Red=TL, Blue=TR, Green=BR, Yellow=BL)
+    static const int qc[4] = {0, 9, 9, 0};
+    for (int p = 0; p < MAX_PLAYERS; p++) {
+        Color c = baseColors[p];
+        DrawRectangle((int)(LUDO_X + qc[p] * LUDO_CELL), (int)(LUDO_Y + qr[p] * LUDO_CELL),
+                      (int)(6 * LUDO_CELL), (int)(6 * LUDO_CELL),
+                      (Color){c.r, c.g, c.b, 60});
+    }
+
+    // Center 3x3 finish square
+    DrawRectangle((int)(LUDO_X + 6 * LUDO_CELL), (int)(LUDO_Y + 6 * LUDO_CELL),
+                  (int)(3 * LUDO_CELL), (int)(3 * LUDO_CELL), (Color){230, 226, 210, 255});
+    DrawRectangleLinesEx((Rectangle){LUDO_X + 6 * LUDO_CELL, LUDO_Y + 6 * LUDO_CELL,
+                         3 * LUDO_CELL, 3 * LUDO_CELL}, 2, (Color){80, 70, 50, 255});
+
+    // Shared 52-square track
     for (int i = 0; i < BOARD_SIZE; i++) {
         BoardSquare *sq = &g->board[i];
         Vector2 c = sq->screenPos;
-        Rectangle r = {c.x - RING_CELL/2, c.y - RING_CELL/2, RING_CELL, RING_CELL};
+        Rectangle r = {c.x - LUDO_CELL/2, c.y - LUDO_CELL/2, LUDO_CELL, LUDO_CELL};
         DrawRectangleRec(r, square_color(sq->type));
         DrawRectangleLinesEx(r, 1, (Color){100, 90, 70, 255});
 
         char id[4];
         sprintf(id, "%d", sq->id);
-        int fs = (sq->id < 10) ? 11 : 9;
-        DrawText(id, (int)(c.x - fs/2), (int)(c.y - 9), fs, (Color){80, 70, 50, 170});
+        int fs = (sq->id < 10) ? 10 : 8;
+        DrawText(id, (int)(c.x - fs/2), (int)(c.y - 8), fs, (Color){80, 70, 50, 170});
     }
 
-    // Home lanes (private, 6 cells per player)
-    static const Color laneColors[4] = {{160, 40, 40, 255}, {40, 70, 170, 255}, {40, 130, 60, 255}, {170, 150, 30, 255}};
+    // Home lanes (private, 6 cells per player, inward toward center)
     for (int p = 0; p < MAX_PLAYERS; p++) {
+        Color c = baseColors[p];
         for (int i = 0; i < HOME_STEPS; i++) {
-            Vector2 c = g->homeLanePos[p][i];
-            Rectangle r = {c.x - RING_CELL/2, c.y - RING_CELL/2, RING_CELL, RING_CELL};
-            DrawRectangleRec(r, laneColors[p]);
+            Vector2 hc = g->homeLanePos[p][i];
+            Rectangle r = {hc.x - LUDO_CELL/2, hc.y - LUDO_CELL/2, LUDO_CELL, LUDO_CELL};
+            DrawRectangleRec(r, c);
             DrawRectangleLinesEx(r, 1, (Color){10, 10, 15, 255});
         }
     }
 
-    // Base yards (2x2 colored clusters in the inner corners)
+    // Base yards: label each corner quadrant with the player's initial
     static const char* baseNames[4] = {"R", "B", "G", "Y"};
-    static const Color baseColors[4] = {RED, BLUE, GREEN, YELLOW};
     for (int p = 0; p < MAX_PLAYERS; p++) {
         float minx = 1e9f, miny = 1e9f, maxx = -1e9f, maxy = -1e9f;
         for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
@@ -94,18 +110,18 @@ static void draw_classic_board(Game *g) {
             if (c.y < miny) miny = c.y;
             if (c.y > maxy) maxy = c.y;
         }
-        DrawRectangle((int)(minx - RING_CELL/2 - 4), (int)(miny - RING_CELL/2 - 4),
-                      (int)(maxx - minx + RING_CELL + 8), (int)(maxy - miny + RING_CELL + 8),
+        DrawRectangle((int)(minx - LUDO_CELL/2 - 4), (int)(miny - LUDO_CELL/2 - 4),
+                      (int)(maxx - minx + LUDO_CELL + 8), (int)(maxy - miny + LUDO_CELL + 8),
                       (Color){baseColors[p].r, baseColors[p].g, baseColors[p].b, 70});
-        DrawRectangleLines((int)(minx - RING_CELL/2 - 4), (int)(miny - RING_CELL/2 - 4),
-                           (int)(maxx - minx + RING_CELL + 8), (int)(maxy - miny + RING_CELL + 8), baseColors[p]);
-        DrawText(baseNames[p], (int)(minx - 5), (int)(maxy + 4), 12, baseColors[p]);
+        DrawRectangleLines((int)(minx - LUDO_CELL/2 - 4), (int)(miny - LUDO_CELL/2 - 4),
+                           (int)(maxx - minx + LUDO_CELL + 8), (int)(maxy - miny + LUDO_CELL + 8), baseColors[p]);
+        DrawText(baseNames[p], (int)(minx - 5), (int)(maxy + 4), 14, baseColors[p]);
     }
 
     // Tokens
     int drawn[BOARD_SIZE];
     for (int i = 0; i < BOARD_SIZE; i++) drawn[i] = 0;
-    Vector2 center = {RING_X + 6.5f * RING_CELL, RING_Y + 6.5f * RING_CELL};
+    Vector2 center = {LUDO_X + 7.5f * LUDO_CELL, LUDO_Y + 7.5f * LUDO_CELL};
 
     for (int p = 0; p < g->playerCount; p++) {
         Player *pl = &g->players[p];
@@ -204,7 +220,7 @@ void board_draw_hud(Game *g) {
             DrawText(typeBuf, panelX + 10, y + 22, 12, g->players[i].tokens[0].pokemon.color);
 
             char homeBuf[32];
-            sprintf(homeBuf, "Home: %d/4", g->players[i].finishedCount);
+            sprintf(homeBuf, "Home: %d/%d", g->players[i].finishedCount, TOKENS_PER_PLAYER);
             DrawText(homeBuf, panelX + 10, y + 42, 12, WHITE);
 
             char winBuf[32];
