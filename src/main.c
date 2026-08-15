@@ -204,6 +204,11 @@ int main(void) {
             DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 550, 20, (Color){255, 202, 40, 255});
         } else {
             board_draw(&game);
+            if (game.state == STATE_PLAYING ||
+            game.state == STATE_ROLLING ||
+            game.state == STATE_MOVING) {
+            board_draw_hud(&game);
+}
             dice_draw(&dice, WINDOW_W - 120, 20);
 
             // Draw current player info

@@ -2,6 +2,7 @@
 #include "board.h"
 #include "board_render.h"
 #include <stdio.h>
+#include "pokemon.h"
 
 #define CELL_SIZE 100
 #define BOARD_X 60
@@ -75,5 +76,55 @@ void board_draw(Game *g) {
             DrawCircleLinesV((Vector2){tx, ty}, 30, BLACK);
         }
         DrawText(pl->name, (int)(tx - 8), (int)(ty + 16), 10, pl->color);
+    }
+}
+void board_draw_hud(Game *g) {
+    int panelX = WINDOW_W - 250;
+    int panelY = 20;
+    
+    DrawRectangle(panelX, panelY, 230, g->playerCount * 80 + 40, (Color){20, 20, 40, 200});
+    DrawRectangleLines(panelX, panelY, 230, g->playerCount * 80 + 40, (Color){80, 80, 100, 255});
+    DrawText("PLAYERS", panelX + 10, panelY + 10, 14, (Color){180, 180, 200, 255});
+    
+    for (int i = 0; i < g->playerCount; i++) {
+        int y = panelY + 35 + i * 80;
+        
+        if (i == g->currentPlayer && g->state == STATE_PLAYING) {
+            DrawRectangle(panelX + 5, y - 5, 220, 70, (Color){40, 40, 60, 255});
+        }
+        
+        DrawText(g->players[i].name, panelX + 10, y, 16, g->players[i].color);
+        
+        char typeBuf[32];
+        sprintf(typeBuf, "%s", poke_type_name(g->players[i].pokemon.type));
+        DrawText(typeBuf, panelX + 10, y + 20, 12, g->players[i].pokemon.color);
+        
+        // HP bar background
+DrawRectangle(
+    panelX + 10,
+    y + 38,
+    150,
+    10,
+    (Color){40, 40, 60, 255}
+);
+
+// Calculate HP percentage
+float pct = (float)g->players[i].pokemon.hp /
+            g->players[i].pokemon.maxHp;
+
+// HP bar fill
+DrawRectangle(
+    panelX + 10,
+    y + 38,
+    (int)(150 * pct),
+    10,
+    pct > 0.5f ? GREEN :
+    pct > 0.25f ? YELLOW :
+    RED
+);
+        
+        char posBuf[16];
+        sprintf(posBuf, "%d/%d", g->players[i].position + 1, BOARD_SQUARES);
+        DrawText(posBuf, panelX + 170, y + 34, 12, WHITE);
     }
 }
