@@ -1,0 +1,91 @@
+CHANGES MADE — 2026-08-15
+=========================
+
+Repo: C:\Users\MAHIRA MANJUR\Desktop\Rick-n-roll  (branch: main, remote: github.com/safinfinity/Rick-n-roll)
+
+Commits pushed today:
+  a507080  Add player hud to board (Day4 person-c)     [12:14]
+  76fc486  trying to implement classic board            [21:22]
+  5b7963d  Classic board code fully implemented         [21:48]
+
+----------------------------------------------------------
+1) PLAYER HUD SIDE PANEL  (commit a507080)
+----------------------------------------------------------
+- src/board_render.c : added board_draw_hud() - a right-hand panel listing
+  every player with their name, Pokemon, HP bar, and board position.
+- src/board_render.h : declared board_draw_hud().
+- src/main.c         : HUD is now drawn every frame during gameplay.
+
+----------------------------------------------------------
+2) CLASSIC BOARD REDESIGNED TO A TRUE 52-CELL LUDO CROSS
+   (commits 76fc486 + 5b7963d)
+----------------------------------------------------------
+The old 48-square ring with 4 tokens/player is gone. Classic Mode now uses a
+genuine Ludo cross board (15x15 grid) with 2 tokens per player.
+
+src/game.h (constants + TokenState/Token comments):
+  BOARD_SIZE            48 -> 52      (shared track cells)
+  TOKENS_PER_PLAYER      4 -> 2
+  SHARED_TRACK_STEPS    30 -> 52
+  TOTAL_TRAVEL_STEPS    36 -> 58      (52 shared + 6 home)
+  HOME_STEPS             6   (unchanged)
+  POKEMON_POOL_SIZE      6   (unchanged)
+  Token progress: 0 = base, 1..52 = shared track,
+                  53..57 = home lane, 58 = goal.
+
+src/board.c:
+  - New geometry: LUDO_GRID 15, LUDO_CELL 44.0, LUDO_X 30.0, LUDO_Y 100.0.
+  - path_r[] / path_c[] tables: the exact 52-cell shared path (sourced from
+    the reference bocaletto-luca/Ludo implementation) plus ludo_pos() helper.
+  - Start squares {1, 14, 40, 27}  (Red, Blue, Green, Yellow).
+  - Safe squares = the 4 starts + 4 mid-sector stars {7, 20, 33, 46}.
+  - classic_home_and_base() rewritten: per-player home lanes (Red row / Blue
+    col / Green col / Yellow row) and 2 diagonal base spots per corner yard.
+  - Removed the old ring helpers (ring_pos / ring_cell).
+  - TEST_CLASSIC self-test updated - "test_classic: all assertions passed".
+
+src/board.h:
+  - Comments updated for the new geometry.
+
+src/board_render.c:
+  - draw_classic_board() fully rewritten: 15x15 cross board, corner base
+    yards (Red TL, Blue TR, Green BR, Yellow BL), 3x3 center finish square,
+    52 numbered shared squares, colored home lanes, base labels, and token
+    drawing with a fanout offset so 2 tokens on one square are visible.
+  - RING_* constants replaced with LUDO_*.
+  - HUD now reads "Home: x/2".
+
+src/main.c:
+  - Token pick prompt: "Press 1-2 to choose a Pokemon to move".
+  - Game-over screen shows "Home x/2" per player.
+  - Comments updated.
+
+src/pokemon.c / src/pokemon.h:
+  - Comment updates only; poke_assign_party() already respects
+    TOKENS_PER_PLAYER, so each player gets 2 distinct random Pokemon.
+
+src/battle.c / src/game.c:
+  - Battle logic is token-aware (start_battle_tokens / resolve_battle):
+    landing on an occupied non-safe square triggers a dice battle; the
+    loser's TOKEN is sent back to base. Safe squares (starts + stars) never
+    trigger a battle. Same rules as before, just applied per token.
+
+----------------------------------------------------------
+3) IMPLEMENTATION PLAN HTML  (not in the repo)
+----------------------------------------------------------
+- Downloads\Rick-n-roll (1).html : removed the stale "NEXT UP - HUD" task
+  from Phase 2 (the HUD is now done). Verified the completed-step list
+  (DEFAULT_CHECKED) still matches the repo through Day 5 Person A.
+- (Note: first edit corrupted the file's UTF-8 encoding; restored from the
+  untouched Downloads\Rick-n-roll.html and redone with byte-safe UTF-8.)
+
+----------------------------------------------------------
+VERIFICATION
+----------------------------------------------------------
+- gcc src/board.c -DTEST_CLASSIC : self-test assertions all pass.
+- make : builds clean (must close Rick-n-roll.exe first if running).
+- Manual smoke run: no crash.
+
+Still NOT implemented (plan Days 6-13): AI opponents, draft screen, battle
+dice animation, name selection, move log, HP-based scoring, and all Ladder
+Mode features (habitat/evolution/mystery squares, party/capture system).
