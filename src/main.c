@@ -35,23 +35,24 @@ static void advance_turn(Game *g) {
     g->currentPlayer = next;
 }
 
-// Find an opponent's ACTIVE token standing on a shared square.
-static int find_opponent_on(Game *g, int square, int myPlayer, int *oppToken) {
+// Find an opponent's ACTIVE token standing on the same square as mine
+static int find_opponent_on(Game *g, int square, int myPlayer, int *oppToken) {  //Which player is the opponent? and Which token of that player is there? int *opptoken is a pointer as it returns these q/a
+
     for (int p = 0; p < g->playerCount; p++) {
-        if (p == myPlayer) continue;
-        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
-            Token *t = &g->players[p].tokens[k];
+        if (p == myPlayer) continue; // if two tokens from palyerb 1 lands on same square, dont initiate a battle
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) { // 2 for loops bcs, each 4 player has 2 poke tokens
+            Token *t = &g->players[p].tokens[k]; // g->players[2].tokens[1] means player 2's 2nd poke, & for the address where its located
             if (t->state == TOKEN_ACTIVE && GetSharedBoardSquare(p, t->progress) == square) {
-                *oppToken = k;
+                *oppToken = k;// when if cond fulfilled, that token k of that player p is my opponent
                 return p;
             }
         }
     }
-    return -1;
+    return -1; // if nobody is in that square except me or my another token, we dont do anything 
 }
 
 // Start a battle between two tokens (Classic Mode).
-static void start_battle_tokens(Game *g, int atkPlayer, int atkToken, int defPlayer, int defToken) {
+static void start_battle_tokens(Game *g, int atkPlayer, int atkToken, int defPlayer, int defToken) {  // this func is for preparing the battle ground
     Token *atk = &g->players[atkPlayer].tokens[atkToken];
     Token *def = &g->players[defPlayer].tokens[defToken];
     g->state = STATE_BATTLE;
@@ -66,26 +67,26 @@ static void start_battle_tokens(Game *g, int atkPlayer, int atkToken, int defPla
     g->battle.defenderMaxHp = def->pokemon.maxHp;
     g->battle.finished = false;
     g->battle.currentRoll = 0;
-    sprintf(g->battle.message, "BATTLE! %s vs %s!", atk->pokemon.name, def->pokemon.name);
+    sprintf(g->battle.message, "BATTLE battle! %s vssss %s!", atk->pokemon.name, def->pokemon.name);
     g->battle.messageTimer = 60;
 }
 
 // Re-count the current player's finished tokens; all of them home = victory.
 static void check_finish(Game *g) {
-    Player *p = &g->players[g->currentPlayer];
-    int fin = 0;
+    Player *p = &g->players[g->currentPlayer]; // checks if it player 1 or 2 or 3 or 4
+    int fin = 0; // number of finished pokemon=0
     for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
-        if (p->tokens[i].state == TOKEN_FINISHED) fin++;
+        if (p->tokens[i].state == TOKEN_FINISHED) fin++; // ekta poke ekta full round dile fin++ hobe
     }
     p->finishedCount = fin;
-    if (fin == TOKENS_PER_PLAYER) {
+    if (fin == TOKENS_PER_PLAYER /* if everybody is home */ ) {
         int order = 1;
         for (int i = 0; i < g->playerCount; i++) {
-            if (g->players[i].finished && i != g->currentPlayer) order++;
+            if (g->players[i].finished && i != g->currentPlayer /*checks if we already marked this one, if not, we mark a position, 1st 2nd etc...*/) order++;// marking who finished first
         }
         p->finished = true;
-        p->finishOrder = order;
-        g->state = STATE_GAME_OVER;
+        p->finishOrder = order;// marks which player achieved which position
+        g->state = STATE_GAME_OVER; 
     }
 }
 
