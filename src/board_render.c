@@ -41,31 +41,39 @@ static const char* square_label(SquareType t) {
 }
 
 static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
+    // Validate the Pokemon type before using it as an array index.
+    if (t->pokemon.type <= POKE_NONE ||
+        t->pokemon.type > POKE_DRAGON) {
+
+        DrawCircleV(pos, 18, pl->color);
+        DrawCircleLinesV(pos, 18, BLACK);
+        return;
+    }
+
     Texture2D spr = g->pokeSprites[t->pokemon.type];
 
-    if (spr.id > 0) {
-        // The board cell is 44x44.
-        // Use a 40px sprite so it is large but stays inside the cell.
-        float spriteSize = 40.0f;
-        float scale = spriteSize / (float)spr.width;
-
-        DrawTextureEx(
-            spr,
-            (Vector2){
-                pos.x - spriteSize / 2.0f,
-                pos.y - spriteSize / 2.0f
-            },
-            0.0f,
-            scale,
-            WHITE
-        );
-    } else {
-        Color typeC = poke_type_color(t->pokemon.type);
-
-        DrawCircleV(pos, 18, typeC);
+    // Texture wasn't loaded correctly.
+    if (spr.id == 0 || spr.width <= 0 || spr.height <= 0) {
+        DrawCircleV(pos, 18, poke_type_color(t->pokemon.type));
         DrawCircleLinesV(pos, 18, pl->color);
-        DrawCircleLinesV(pos, 18, (Color){10, 10, 15, 255});
+        DrawCircleLinesV(pos, 18, BLACK);
+        return;
     }
+
+    // Keep the sprite inside the 44x44 board cell.
+    float spriteSize = 40.0f;
+    float scale = spriteSize / (float)spr.width;
+
+    DrawTextureEx(
+        spr,
+        (Vector2){
+            pos.x - spriteSize / 2.0f,
+            pos.y - spriteSize / 2.0f
+        },
+        0.0f,
+        scale,
+        WHITE
+    );
 }
 
 static void draw_classic_board(Game *g) {

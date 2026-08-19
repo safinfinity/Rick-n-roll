@@ -35,7 +35,7 @@ static Vector2 ludo_pos(int r, int c) {
 // ── Classic Mode geometry ──
 
 int GetStartSquare(int player) {
-    static const int starts[MAX_PLAYERS] = {1, 14, 40, 27}; // Red, Blue, Green, Yellow
+    static const int starts[MAX_PLAYERS] = {2, 15, 41, 28}; // Red, Blue, Green, Yellow
     if (player < 0 || player >= MAX_PLAYERS) return 1;
     return starts[player];
 }
@@ -51,8 +51,9 @@ int GetNextBoardSquare(int currentSquare) {
 
 bool IsSafeSquare(int square) {
     switch (square) {
-        case 1: case 14: case 27: case 40: // starting squares (Red, Blue, Yellow, Green)
+        case 2: case 15: case 41: case 28: // starting squares (Red, Blue, Yellow, Green)
         case 7: case 20: case 33: case 46: // mid-sector star squares
+         case 10: case 23: case 36: case 49: // additional safe squares
             return true;
         default:
             return false;
@@ -114,8 +115,8 @@ static void classic_home_and_base(Game *g) {
     static const int bc[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
         {2, 4},    // Red cols 2,4
         {10, 12},  // Blue cols 10,12
-        {10, 12},  // Green cols 10,12
-        {2, 4}     // Yellow cols 2,4
+        {2, 4},  // Green cols 10,12
+        {10, 12}     // Yellow cols 2,4
     };
 
     for (int p = 0; p < MAX_PLAYERS; p++) {

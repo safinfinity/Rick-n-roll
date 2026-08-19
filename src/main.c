@@ -164,9 +164,14 @@ static void draw_game_over(Game *g) {
 
     DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 560, 20, (Color){255, 202, 40, 255});
 }
-
 int main(void) {
     InitWindow(WINDOW_W, WINDOW_H, "Rick-n-roll");
+
+    // Render the game at a fixed virtual resolution.
+    // This lets us scale the entire game cleanly in fullscreen.
+    RenderTexture2D gameTarget = LoadRenderTexture(WINDOW_W, WINDOW_H);
+    SetTextureFilter(gameTarget.texture, TEXTURE_FILTER_BILINEAR);
+
     SetTargetFPS(60);
 
     Game game = {0};
@@ -179,6 +184,10 @@ int main(void) {
     int turnRoll = 0;                 // classic: dice value of the current turn
 
     while (!WindowShouldClose()) {
+                // F11 toggles fullscreen
+        if (IsKeyPressed(KEY_F11)) {
+            ToggleFullscreen();
+        }
 
         // Menu handling: only runs while on a menu screen
         if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) {
@@ -362,7 +371,10 @@ int main(void) {
             }
         }
 
-        BeginDrawing();
+        // ---------------------------------------------------------
+        // DRAW GAME TO FIXED 1200x800 VIRTUAL SCREEN
+        // ---------------------------------------------------------
+        BeginTextureMode(gameTarget);
         ClearBackground((Color){15, 15, 30, 255});
 
         if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) {
@@ -416,10 +428,58 @@ int main(void) {
             }
         }
 
+           EndTextureMode();
+
+        // ---------------------------------------------------------
+        // DRAW VIRTUAL SCREEN TO ACTUAL WINDOW
+        // ---------------------------------------------------------
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        float screenW = (float)GetScreenWidth();
+        float screenH = (float)GetScreenHeight();
+
+        // Keep the original 1200x800 aspect ratio.
+        float scaleX = screenW / (float)WINDOW_W;
+        float scaleY = screenH / (float)WINDOW_H;
+        float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+        float drawW = WINDOW_W * scale;
+        float drawH = WINDOW_H * scale;
+
+        float offsetX = (screenW - drawW) / 2.0f;
+        float offsetY = (screenH - drawH) / 2.0f;
+
+        Rectangle source = {
+            0,
+            0,
+            (float)WINDOW_W,
+            -(float)WINDOW_H
+        };
+
+        Rectangle destination = {
+            offsetX,
+            offsetY,
+            drawW,
+            drawH
+        };
+
+        DrawTexturePro(
+            gameTarget.texture,
+            source,
+            destination,
+            (Vector2){0, 0},
+            0.0f,
+            WHITE
+        );
+
         EndDrawing();
     }
 
     unload_poke_sprites(&game);
+    UnloadRenderTexture(gameTarget);
     CloseWindow();
+
     return 0;
 }
