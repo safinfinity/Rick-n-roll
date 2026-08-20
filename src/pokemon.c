@@ -131,48 +131,50 @@ void poke_assign_random(Player *players, int count) {
 // (without replacement) from the 6-Pokemon pool. Fisher-Yates shuffle keeps it
 // fair and independent per player. Each token starts in its base.
 void poke_assign_party(Player *players, int count) {
-    int pool[STARTER_COUNT];
+    int total = count * TOKENS_PER_PLAYER;
 
-    // Create pool: 0,1,2,3,4,5,6,7
-    for (int i = 0; i < STARTER_COUNT; i++) {
-        pool[i] = i;
+    // Build a balanced pool.
+    // Each of the 8 Pokemon appears enough times
+    // to distribute evenly among all players.
+    int pool[MAX_PLAYERS * TOKENS_PER_PLAYER];
+
+    int poolIndex = 0;
+
+    for (int round = 0; round < (total / STARTER_COUNT) + 1; round++) {
+        for (int i = 0; i < STARTER_COUNT && poolIndex < total; i++) {
+            pool[poolIndex++] = i;
+        }
     }
 
-    // Shuffle ONCE for the whole game
-    for (int i = STARTER_COUNT - 1; i > 0; i--) {
+    // Shuffle the entire pool ONCE.
+    for (int i = total - 1; i > 0; i--) {
         int j = rand() % (i + 1);
+
         int tmp = pool[i];
         pool[i] = pool[j];
         pool[j] = tmp;
     }
 
-    /*
-     * Give each player one Pokemon from the first half
-     * and one Pokemon from the second half.
-     *
-     * This prevents the two Pokemon from one random half
-     * from being given to the same player.
-     */
-    int half = STARTER_COUNT / 2;
+    // Deal 4 Pokemon to each player.
+    int index = 0;
 
     for (int p = 0; p < count; p++) {
 
-        int firstIndex = p % half;
-        int secondIndex = half + (p % half);
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
 
-        players[p].tokens[0].owner = p;
-        players[p].tokens[0].pokemon =
-            poke_create(starter_pool[firstIndex].name,
-                        starter_pool[firstIndex].type);
-        players[p].tokens[0].state = TOKEN_BASE;
-        players[p].tokens[0].progress = 0;
+            int pokemonIndex = pool[index++];
 
-        players[p].tokens[1].owner = p;
-        players[p].tokens[1].pokemon =
-            poke_create(starter_pool[secondIndex].name,
-                        starter_pool[secondIndex].type);
-        players[p].tokens[1].state = TOKEN_BASE;
-        players[p].tokens[1].progress = 0;
+            players[p].tokens[k].owner = p;
+
+            players[p].tokens[k].pokemon =
+                poke_create(
+                    starter_pool[pokemonIndex].name,
+                    starter_pool[pokemonIndex].type
+                );
+
+            players[p].tokens[k].state = TOKEN_BASE;
+            players[p].tokens[k].progress = 0;
+        }
 
         players[p].finishedCount = 0;
         players[p].finished = false;

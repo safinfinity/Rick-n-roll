@@ -10,7 +10,7 @@
 #define BOARD_SIZE 52            // Classic mode: 52-cell Ludo cross track (wraps 52 -> 1)
 #define BOARD_SQUARES 30         // Ladder mode: single-token linear board
 #define MAX_PLAYERS 4
-#define TOKENS_PER_PLAYER 2      // Classic mode: 2 Pokemon tokens per player
+#define TOKENS_PER_PLAYER 4      // Classic mode: 4 Pokemon tokens per player
 #define POKEMON_POOL_SIZE 8
 #define SHARED_TRACK_STEPS 52    // steps on shared cross track before home lane
 #define HOME_STEPS 6             // steps through the private home lane

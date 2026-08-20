@@ -107,17 +107,17 @@ static void classic_home_and_base(Game *g) {
     };
     // Base token spots: 2 diagonal cells of each corner 2x2 yard.
     static const int br[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
-        {2, 4},    // Red (top-left yard)
-        {2, 4},    // Blue (top-right yard)
-        {10, 12},  // Green (bottom-right yard)
-        {10, 12}   // Yellow (bottom-left yard)
-    };
-    static const int bc[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
-        {2, 4},    // Red cols 2,4
-        {10, 12},  // Blue cols 10,12
-        {2, 4},  // Green cols 10,12
-        {10, 12}     // Yellow cols 2,4
-    };
+    {2, 2, 4, 4},       // Red - top-left
+    {2, 2, 4, 4},       // Blue - top-right
+    {10, 10, 12, 12},   // Green - bottom-left
+    {10, 10, 12, 12}    // Yellow - bottom-right
+};
+   static const int bc[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
+    {2, 4, 2, 4},       // Red - top-left
+    {10, 12, 10, 12},   // Blue - top-right
+    {2, 4, 2, 4},       // Green - bottom-left
+    {10, 12, 10, 12}    // Yellow - bottom-right
+};
 
     for (int p = 0; p < MAX_PLAYERS; p++) {
         for (int i = 0; i < HOME_STEPS; i++) {
