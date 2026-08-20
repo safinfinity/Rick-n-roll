@@ -43,7 +43,7 @@ static const char* square_label(SquareType t) {
 static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
     // Validate the Pokemon type before using it as an array index.
     if (t->pokemon.type <= POKE_NONE ||
-        t->pokemon.type > POKE_DRAGON) {
+    t->pokemon.type > POKE_FIGHTING) {
 
         DrawCircleV(pos, 18, pl->color);
         DrawCircleLinesV(pos, 18, BLACK);

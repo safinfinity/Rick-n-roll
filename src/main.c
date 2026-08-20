@@ -16,10 +16,12 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_ELECTRIC]  = LoadTexture("assets/images/electric.png");
     g->pokeSprites[POKE_PSYCHIC]   = LoadTexture("assets/images/psychic.png");
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
+    g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
+g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
 }
 
 static void unload_poke_sprites(Game *g) {
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i < 9; i++) {
         UnloadTexture(g->pokeSprites[i]);
     }
 }

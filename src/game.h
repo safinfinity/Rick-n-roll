@@ -11,7 +11,7 @@
 #define BOARD_SQUARES 30         // Ladder mode: single-token linear board
 #define MAX_PLAYERS 4
 #define TOKENS_PER_PLAYER 2      // Classic mode: 2 Pokemon tokens per player
-#define POKEMON_POOL_SIZE 6
+#define POKEMON_POOL_SIZE 8
 #define SHARED_TRACK_STEPS 52    // steps on shared cross track before home lane
 #define HOME_STEPS 6             // steps through the private home lane
 #define TOTAL_TRAVEL_STEPS 58    // SHARED_TRACK_STEPS + HOME_STEPS
@@ -23,13 +23,15 @@
 
 // ── Pokemon Types ──
 typedef enum {
-    POKE_NONE = 0, // enum assigns name for numbers
+    POKE_NONE = 0,
     POKE_FIRE = 1,
     POKE_WATER = 2,
     POKE_GRASS = 3,
     POKE_ELECTRIC = 4,
     POKE_PSYCHIC = 5,
-    POKE_DRAGON = 6
+    POKE_DRAGON = 6,
+    POKE_ICE = 7,
+    POKE_FIGHTING = 8
 } PokeType;
 
 // ── Game Modes ──
@@ -166,7 +168,7 @@ typedef struct {
     Dice dice;
     BattleState battle;
     int turnCount;
-    Texture2D pokeSprites[7]; // indexed by PokeType (1-6)
+    Texture2D pokeSprites[9]; // indexed by PokeType (1-6)
 } Game;
 
 // ── Function declarations ──
