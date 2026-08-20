@@ -30,11 +30,30 @@ static void unload_poke_sprites(Game *g) {
 
 // Advance the turn to the next player who has not finished.
 static void advance_turn(Game *g) {
-    int next = g->currentPlayer;
+    // Desired turn order:
+    // Red -> Blue -> Yellow -> Green -> Red
+    static const int turnOrder[MAX_PLAYERS] = {0, 1, 2, 3};
+
+    int currentIndex = 0;
+
+    // Find current player's position in the turn order
+    for (int i = 0; i < g->playerCount; i++) {
+        if (turnOrder[i] == g->currentPlayer) {
+            currentIndex = i;
+            break;
+        }
+    }
+
+    int nextIndex = currentIndex;
+
     do {
-        next = (next + 1) % g->playerCount;
-    } while (g->players[next].finished && next != g->currentPlayer);
-    g->currentPlayer = next;
+        nextIndex = (nextIndex + 1) % g->playerCount;
+    } while (
+        g->players[turnOrder[nextIndex]].finished &&
+        nextIndex != currentIndex
+    );
+
+    g->currentPlayer = turnOrder[nextIndex];
 }
 
 // Find an opponent's ACTIVE token standing on the same square as mine

@@ -17,15 +17,25 @@ static const Color type_colors[] = {
     {121, 85, 72, 255}
 };
 
-static int advantage[7][7] = {
-// NONE  FIRE  WATER GRASS ELEC PSYCH DRAGON
-    {0,    0,    0,    0,    0,    0,    0},     // NONE
-    {0,    0,    0,    2,    0,    0,    0},     // FIRE > GRASS
-    {0,    2,    0,    0,    0,    0,    0},     // WATER > FIRE
-    {0,    0,    2,    0,    0,    0,    0},     // GRASS > WATER
-    {0,    0,    2,    0,    0,    0,    0},     // ELECTRIC > WATER
-    {0,    0,    0,    0,    0,    0,    2},     // PSYCHIC > DRAGON
-    {0,    2,    0,    0,    2,    0,    0},     // DRAGON > FIRE, DRAGON > ELECTRIC
+static int advantage[9][9] = {
+    /*              NONE FIRE WATER GRASS ELECTRIC PSYCHIC DRAGON ICE FIGHTING */
+    /* NONE */    { 0,   0,   0,    0,    0,       0,      0,     0,  0 },
+
+    /* FIRE */    { 0,   0,   0,    1,    0,       0,      0,     1,  0 },
+
+    /* WATER */   { 0,   1,   0,    0,    0,       0,      0,     0,  0 },
+
+    /* GRASS */   { 0,   0,   1,    0,    0,       0,      0,     0,  0 },
+
+    /* ELECTRIC */{ 0,   0,   1,    0,    0,       0,      0,     0,  0 },
+
+    /* PSYCHIC */ { 0,   0,   0,    0,    0,       0,      0,     0,  1 },
+
+    /* DRAGON */  { 0,   0,   0,    0,    0,       0,      1,     0,  0 },
+
+    /* ICE */     { 0,   0,   0,    1,    0,       0,      1,     0,  0 },
+
+    /* FIGHTING */{ 0,   0,   0,    0,    0,       1,      0,     1,  0 }
 };
 
 const char* poke_type_name(PokeType t) {
@@ -39,9 +49,15 @@ Color poke_type_color(PokeType t) {
 }
 
 bool poke_type_advantage(PokeType attacker, PokeType defender) {
-    if (attacker < 0 || attacker >= 7 || defender < 0 || defender >= 7)
+
+    if (attacker <= POKE_NONE ||
+        attacker > POKE_FIGHTING ||
+        defender <= POKE_NONE ||
+        defender > POKE_FIGHTING) {
         return false;
-    return advantage[attacker][defender] > 0;
+    }
+
+    return advantage[attacker][defender] != 0;
 }
 
 typedef struct {
@@ -71,6 +87,8 @@ static const PokeTemplate templates[] = {
     {"Dratini", POKE_DRAGON, 85, 13, 11},
     {"Dragonair", POKE_DRAGON, 100, 16, 13},
     {"Dragonite", POKE_DRAGON, 120, 18, 16},
+    {"Glaceon", POKE_ICE, 90, 14, 12},
+{"Machamp", POKE_FIGHTING, 105, 17, 13},
 };
 
 #define TEMPLATE_COUNT (sizeof(templates) / sizeof(templates[0]))
@@ -130,54 +148,207 @@ void poke_assign_random(Player *players, int count) {
 // Classic Mode: each player gets TOKENS_PER_PLAYER (2) distinct Pokemon sampled
 // (without replacement) from the 6-Pokemon pool. Fisher-Yates shuffle keeps it
 // fair and independent per player. Each token starts in its base.
+static int pokemon_power(const PokeTemplate *p) {
+    // Overall combat strength score.
+    // Higher = stronger.
+    return p->hp + (p->atk * 3) + (p->def * 2);
+}
+
+
 void poke_assign_party(Player *players, int count) {
-    int total = count * TOKENS_PER_PLAYER;
 
-    // Build a balanced pool.
-    // Each of the 8 Pokemon appears enough times
-    // to distribute evenly among all players.
-    int pool[MAX_PLAYERS * TOKENS_PER_PLAYER];
+    /*
+     * We have 8 Pokemon and up to 4 players.
+     *
+     * The 8 Pokemon are ranked by their actual stats and
+     * divided into 4 strength tiers:
+     *
+     * Tier 1 = 2 weakest
+     * Tier 2 = next 2
+     * Tier 3 = next 2
+     * Tier 4 = 2 strongest
+     *
+     * Every player receives exactly ONE Pokemon from
+     * every tier.
+     *
+     * Therefore nobody can get all the strongest Pokemon.
+     */
 
-    int poolIndex = 0;
+    if (count <= 0 || count > MAX_PLAYERS)
+        return;
 
-    for (int round = 0; round < (total / STARTER_COUNT) + 1; round++) {
-        for (int i = 0; i < STARTER_COUNT && poolIndex < total; i++) {
-            pool[poolIndex++] = i;
+
+    /* --------------------------------------------------
+       1. Create an array containing all 8 Pokemon indexes
+       -------------------------------------------------- */
+
+    int sorted[STARTER_COUNT];
+
+    for (int i = 0; i < STARTER_COUNT; i++) {
+        sorted[i] = i;
+    }
+
+
+    /* --------------------------------------------------
+       2. Sort Pokemon from weakest → strongest
+       -------------------------------------------------- */
+
+    for (int i = 0; i < STARTER_COUNT - 1; i++) {
+
+        for (int j = i + 1; j < STARTER_COUNT; j++) {
+
+            int powerI = pokemon_power(&starter_pool[sorted[i]]);
+            int powerJ = pokemon_power(&starter_pool[sorted[j]]);
+
+            if (powerJ < powerI) {
+
+                int temp = sorted[i];
+                sorted[i] = sorted[j];
+                sorted[j] = temp;
+            }
         }
     }
 
-    // Shuffle the entire pool ONCE.
-    for (int i = total - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
 
-        int tmp = pool[i];
-        pool[i] = pool[j];
-        pool[j] = tmp;
+    /* --------------------------------------------------
+       3. Divide the 8 Pokemon into 4 strength tiers
+       -------------------------------------------------- */
+
+    int tiers[4][2];
+
+    for (int tier = 0; tier < 4; tier++) {
+        tiers[tier][0] = sorted[tier * 2];
+        tiers[tier][1] = sorted[tier * 2 + 1];
     }
 
-    // Deal 4 Pokemon to each player.
-    int index = 0;
 
-    for (int p = 0; p < count; p++) {
+    /*
+     * With your current stats, this will approximately be:
+     *
+     * Tier 1:
+     *   Abra
+     *   Pikachu
+     *
+     * Tier 2:
+     *   Squirtle
+     *   Charmander
+     *
+     * Tier 3:
+     *   Bulbasaur
+     *   Dratini
+     *
+     * Tier 4:
+     *   Glaceon
+     *   Machamp
+     *
+     * The exact order is calculated automatically from stats.
+     */
 
-        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
 
-            int pokemonIndex = pool[index++];
+    /* --------------------------------------------------
+       4. Give each player one Pokemon from each tier
+       -------------------------------------------------- */
 
-            players[p].tokens[k].owner = p;
+    for (int tier = 0; tier < 4; tier++) {
 
-            players[p].tokens[k].pokemon =
+        /*
+         * Each Pokemon in this tier must appear exactly
+         * enough times to give one to every player.
+         *
+         * Example with 4 players:
+         *
+         * Pokemon A × 2
+         * Pokemon B × 2
+         *
+         * Total = 4
+         */
+
+        int deck[MAX_PLAYERS];
+
+        int deckIndex = 0;
+
+        for (int copy = 0; copy < count; copy++) {
+
+            /*
+             * Randomly choose which of the two Pokemon
+             * gets this copy.
+             */
+            deck[deckIndex++] = tiers[tier][copy % 2];
+        }
+
+
+        /* --------------------------------------------------
+           5. Shuffle this tier
+           -------------------------------------------------- */
+
+        for (int i = count - 1; i > 0; i--) {
+
+            int j = rand() % (i + 1);
+
+            int temp = deck[i];
+            deck[i] = deck[j];
+            deck[j] = temp;
+        }
+
+
+        /* --------------------------------------------------
+           6. Deal one Pokemon from this tier to each player
+           -------------------------------------------------- */
+
+        for (int p = 0; p < count; p++) {
+
+            int pokemonIndex = deck[p];
+
+            players[p].tokens[tier].owner = p;
+
+            players[p].tokens[tier].pokemon =
                 poke_create(
                     starter_pool[pokemonIndex].name,
                     starter_pool[pokemonIndex].type
                 );
 
-            players[p].tokens[k].state = TOKEN_BASE;
-            players[p].tokens[k].progress = 0;
+            players[p].tokens[tier].state = TOKEN_BASE;
+            players[p].tokens[tier].progress = 0;
         }
+    }
+
+
+    /* --------------------------------------------------
+       7. Reset player completion information
+       -------------------------------------------------- */
+
+    for (int p = 0; p < count; p++) {
 
         players[p].finishedCount = 0;
         players[p].finished = false;
         players[p].finishOrder = 0;
+    }
+
+
+    /* --------------------------------------------------
+       8. Randomize the four token positions
+       -------------------------------------------------- */
+
+    for (int p = 0; p < count; p++) {
+
+        for (int i = TOKENS_PER_PLAYER - 1; i > 0; i--) {
+
+            int j = rand() % (i + 1);
+
+            Token temp = players[p].tokens[i];
+
+            players[p].tokens[i] =
+                players[p].tokens[j];
+
+            players[p].tokens[j] =
+                temp;
+        }
+
+        /*
+         * Owner remains the same after swapping.
+         */
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
+            players[p].tokens[k].owner = p;
+        }
     }
 }

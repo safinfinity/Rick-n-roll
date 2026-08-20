@@ -82,7 +82,7 @@ static void draw_classic_board(Game *g) {
     DrawRectangleLinesEx((Rectangle){LUDO_X - 16, LUDO_Y - 16, bw + 32, bw + 32}, 2, (Color){90, 90, 120, 255});
 
     // Corner base yards (6x6 quadrants) in each player's color
-    static const Color baseColors[4] = {RED, BLUE, GREEN, YELLOW};
+static const Color baseColors[4] = {RED, BLUE, YELLOW, GREEN};
     static const int qr[4] = {0, 0, 9, 9}; // quadrant row offsets (Red=TL, Blue=TR, Green=BR, Yellow=BL)
     static const int qc[4] = {0, 9, 9, 0};
     for (int p = 0; p < MAX_PLAYERS; p++) {
@@ -124,7 +124,7 @@ static void draw_classic_board(Game *g) {
     }
 
     // Base yards: label each corner quadrant with the player's initial
-    static const char* baseNames[4] = {"R", "B", "G", "Y"};
+static const char* baseNames[4] = {"R", "B", "Y", "G"};
     for (int p = 0; p < MAX_PLAYERS; p++) {
         float minx = 1e9f, miny = 1e9f, maxx = -1e9f, maxy = -1e9f;
         for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
@@ -232,23 +232,26 @@ void board_draw_hud(Game *g) {
         DrawRectangleLines(panelX, panelY, 230, ph, (Color){80, 80, 100, 255});
         DrawText("PLAYERS", panelX + 10, panelY + 10, 14, (Color){180, 180, 200, 255});
 
-        for (int i = 0; i < g->playerCount; i++) {
-            int y = panelY + 35 + i * 92;
+static const int hudOrder[MAX_PLAYERS] = {0, 1, 2, 3};
+
+for (int i = 0; i < g->playerCount; i++) {
+    int p = hudOrder[i];
+    int y = panelY + 35 + i * 92;
             if (i == g->currentPlayer && g->state == STATE_PLAYING) {
                 DrawRectangle(panelX + 5, y - 5, 220, 82, (Color){40, 40, 60, 255});
             }
-            DrawText(g->players[i].name, panelX + 10, y, 16, g->players[i].color);
+            DrawText(g->players[p].name, panelX + 10, y, 16, g->players[p].color);
 
             char typeBuf[32];
-            sprintf(typeBuf, "%s", poke_type_name(g->players[i].tokens[0].pokemon.type));
-            DrawText(typeBuf, panelX + 10, y + 22, 12, g->players[i].tokens[0].pokemon.color);
+            sprintf(typeBuf, "%s", poke_type_name(g->players[p].tokens[0].pokemon.type));
+            DrawText(typeBuf, panelX + 10, y + 22, 12, g->players[p].tokens[0].pokemon.color);
 
             char homeBuf[32];
-            sprintf(homeBuf, "Home: %d/%d", g->players[i].finishedCount, TOKENS_PER_PLAYER);
+            sprintf(homeBuf, "Home: %d/%d", g->players[p].finishedCount, TOKENS_PER_PLAYER);
             DrawText(homeBuf, panelX + 10, y + 42, 12, WHITE);
 
             char winBuf[32];
-            sprintf(winBuf, "Wins: %d", g->players[i].wins);
+            sprintf(winBuf, "Wins: %d", g->players[p].wins);
             DrawText(winBuf, panelX + 10, y + 62, 12, (Color){180, 180, 200, 255});
         }
         return;
