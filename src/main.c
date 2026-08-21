@@ -67,13 +67,13 @@ static void start_battle_tokens(Game *g, int atkPlayer, int atkToken, int defPla
     g->battle.defenderMaxHp = def->pokemon.maxHp;
     g->battle.finished = false;
     g->battle.currentRoll = 0;
-    sprintf(g->battle.message, "BATTLE battle! %s vssss %s!", atk->pokemon.name, def->pokemon.name);
+    sprintf(g->battle.message, "BATTLE ! %s vs %s!", atk->pokemon.name, def->pokemon.name);
     g->battle.messageTimer = 60;
 }
 
 // Re-count the current player's finished tokens; all of them home = victory.
 static void check_finish(Game *g) {
-    Player *p = &g->players[g->currentPlayer]; // checks if it player 1 or 2 or 3 or 4
+    Player *p = &g->players[g->currentPlayer  /* player array index 0-3  er moddhe current player  0 1 2 nki 3*/]; // checks if it player 1 or 2 or 3 or 4
     int fin = 0; // number of finished pokemon=0
     for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
         if (p->tokens[i].state == TOKEN_FINISHED) fin++; // ekta poke ekta full round dile fin++ hobe
@@ -95,31 +95,34 @@ static void resolve_battle(Game *g) {
     int atk = g->battle.attackerIdx;
     int def = g->battle.defenderIdx;
     if (g->mode == MODE_CLASSIC) {
-        Token *atkT = &g->players[atk].tokens[g->battle.attackerToken];
-        Token *defT = &g->players[def].tokens[g->battle.defenderToken];
-        atkT->pokemon.hp = g->battle.attackerHp;
-        defT->pokemon.hp = g->battle.defenderHp;
-        if (g->battle.attackerWon) {
+        Token *atkT = &g->players[atk].tokens[g->battle.attackerToken];  //specifying player 0 er token 0 is attacker
+        Token *defT = &g->players[def].tokens[g->battle.defenderToken]; //specifying player 2 er token 1 is defender
+        atkT->pokemon.hp = g->battle.attackerHp; // During the battle, HP is updated in g->battle, not immediately in the tokens. These lines copy the final HP values back to the Pokémon stored in the real tokens
+        defT->pokemon.hp = g->battle.defenderHp; 
+        if (g->battle.attackerWon) {// attackerWOn is a bool, if true defender-->base, atkr++
             SendTokenToBase(defT);
             g->players[atk].wins++;
         } else {
-            SendTokenToBase(atkT);
+            SendTokenToBase(atkT);// sendTokenBase(token *t) is a function from board.c
             g->players[def].wins++;
         }
-    } else {
-        g->players[atk].pokemon.hp = g->battle.attackerHp;
+    } 
+    else // if the attack occurs in ladder mode
+    {
+        g->players[atk].pokemon.hp = g->battle.attackerHp;// no token tension, pokemon is stored directly under player
         g->players[def].pokemon.hp = g->battle.defenderHp;
         if (g->battle.attackerWon) {
-            g->players[def].position = 0;
-            g->players[atk].wins++;
+            g->players[def].position = 0;// if someone loses they are sent back to starting square 0
+            g->players[atk].wins++; // winner stays in the square
         } else {
-            g->players[atk].position = 0;
+            g->players[atk].position = 0;// player is an array of structs btw so each player er under e achhe win ,lose ,pos etc
             g->players[def].wins++;
         }
     }
 }
 
-static void draw_game_over(Game *g) {
+//shows game over page ki show korbe 
+static void draw_game_over(Game *g) { //static means this helper function can only be used inside main.c.
     DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){10, 10, 30, 240});
     DrawText("GAME OVER", WINDOW_W/2 - MeasureText("GAME OVER", 48)/2, 120, 48, (Color){255, 202, 40, 255});
 
