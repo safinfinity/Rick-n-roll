@@ -10,9 +10,8 @@ void game_init(Game *g) {
     g->playerCount = 0;      // set later in the menu (was hardcoded to 2)
     g->mode = MODE_CLASSIC;  // default mode; menu lets the player pick Classic or Ladder
 
-    const char *names[] = {"Red", "Blue", "Green", "Yellow"};
-    Color colors[] = {RED, BLUE, GREEN, YELLOW};
-
+const char *names[] = {"Red", "Blue", "Yellow", "Green"};
+Color colors[] = {RED, BLUE, YELLOW, GREEN};
     for (int i = 0; i < MAX_PLAYERS; i++) {
         g->players[i].id = i;
         g->players[i].name = names[i];
@@ -57,31 +56,118 @@ void battle_roll(Game *g) {
         atkType = (int)g->players[g->battle.attackerIdx].pokemon.type;
         defType = (int)g->players[g->battle.defenderIdx].pokemon.type;
     }
+// Check actual Pokemon type advantages
+bool atkAdvantage = poke_type_advantage(
+    (PokeType)atkType,
+    (PokeType)defType
+);
 
-    int atkBonus = (roll == atkType) ? TYPE_ADVANTAGE_BONUS : 0;
-    int defBonus = (roll == defType) ? TYPE_ADVANTAGE_BONUS : 0;
+bool defAdvantage = poke_type_advantage(
+    (PokeType)defType,
+    (PokeType)atkType
+);
 
-    // Apply damage
-    g->battle.defenderHp -= (5 + atkBonus * 3);
-    g->battle.attackerHp -= (5 + defBonus * 3);
+// Get the actual Pokemon stats
+int atkStat;
+int defStat;
+int defenderDef;
+int attackerDef;
 
+if (g->mode == MODE_CLASSIC) {
+    Pokemon *atkPokemon =
+        &g->players[g->battle.attackerIdx]
+             .tokens[g->battle.attackerToken].pokemon;
+
+    Pokemon *defPokemon =
+        &g->players[g->battle.defenderIdx]
+             .tokens[g->battle.defenderToken].pokemon;
+
+    atkStat = atkPokemon->atk;
+    defStat = defPokemon->atk;
+
+    defenderDef = defPokemon->def;
+    attackerDef = atkPokemon->def;
+
+} else {
+
+    atkStat = g->players[g->battle.attackerIdx].pokemon.atk;
+    defStat = g->players[g->battle.defenderIdx].pokemon.atk;
+
+    defenderDef = g->players[g->battle.defenderIdx].pokemon.def;
+    attackerDef = g->players[g->battle.attackerIdx].pokemon.def;
+}
+
+// Base damage comes from ATK
+int atkDamage = atkStat;
+int defDamage = defStat;
+
+// Type advantage = 50% more damage
+if (atkAdvantage) {
+    atkDamage = (atkDamage * 3) / 2;
+}
+
+if (defAdvantage) {
+    defDamage = (defDamage * 3) / 2;
+}
+
+// Rolling 6 = critical hit
+if (roll == 6) {
+    atkDamage *= 2;
+    defDamage *= 2;
+}
+
+// DEF reduces incoming damage
+atkDamage -= defenderDef;
+defDamage -= attackerDef;
+
+// Always deal at least 1 damage
+if (atkDamage < 1)
+    atkDamage = 1;
+
+if (defDamage < 1)
+    defDamage = 1;
+
+// Apply damage
+g->battle.defenderHp -= atkDamage;
+g->battle.attackerHp -= defDamage;
     // Clamp
     if (g->battle.defenderHp < 0) g->battle.defenderHp = 0;
     if (g->battle.attackerHp < 0) g->battle.attackerHp = 0;
 
-    // Message
-    if (atkBonus > 0 && defBonus > 0) {
-        sprintf(g->battle.message, "Roll %d: Both land a hit!", roll);
-    } else if (atkBonus > 0) {
-        sprintf(g->battle.message, "Roll %d: Super effective!", roll);
-    } else if (defBonus > 0) {
-        sprintf(g->battle.message, "Roll %d: Counter attack!", roll);
-    } else {
-        sprintf(g->battle.message, "Roll %d: Both miss...", roll);
-    }
-    g->battle.messageTimer = 60;
-    g->battle.currentRoll = roll;
-    g->battle.rollsLeft--;
+// Battle message
+if (atkAdvantage && defAdvantage) {
+    sprintf(g->battle.message,
+            "Roll %d: Both have type advantage!",
+            roll);
+
+} else if (atkAdvantage && roll == 6) {
+    sprintf(g->battle.message,
+            "CRITICAL! Type advantage!");
+
+} else if (defAdvantage && roll == 6) {
+    sprintf(g->battle.message,
+            "CRITICAL! Defender strikes back!");
+
+} else if (atkAdvantage) {
+    sprintf(g->battle.message,
+            "Roll %d: Super effective!",
+            roll);
+
+} else if (defAdvantage) {
+    sprintf(g->battle.message,
+            "Roll %d: Defender has type advantage!",
+            roll);
+
+} else if (roll == 6) {
+    sprintf(g->battle.message,
+            "Roll %d: CRITICAL HIT!",
+            roll);
+
+} else {
+    sprintf(g->battle.message,
+            "Roll %d: Normal attack!",
+            roll);
+}
 
     // Check if battle is over
     if (g->battle.rollsLeft <= 0 || g->battle.defenderHp <= 0 || g->battle.attackerHp <= 0) {

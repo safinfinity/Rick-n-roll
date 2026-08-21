@@ -2,7 +2,12 @@
 #include <stdio.h>
 
 void dice_roll(Dice *d) {
-    d->value = GetRandomValue(1, 6);
+  int roll = GetRandomValue(1, 100);
+
+if (roll <= 25)
+    d->value = 6;
+else
+    d->value = GetRandomValue(1, 5);
     d->rolling = true;
     d->rollTimer = 0;
     d->rollDuration = 30;

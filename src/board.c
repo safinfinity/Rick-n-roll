@@ -35,7 +35,7 @@ static Vector2 ludo_pos(int r, int c) {
 // ── Classic Mode geometry ──
 
 int GetStartSquare(int player) {
-    static const int starts[MAX_PLAYERS] = {1, 14, 40, 27}; // Red, Blue, Green, Yellow
+    static const int starts[MAX_PLAYERS] = {2, 15, 28, 41}; // Red, Blue, Green, Yellow
     if (player < 0 || player >= MAX_PLAYERS) return 1;
     return starts[player];
 }
@@ -51,8 +51,9 @@ int GetNextBoardSquare(int currentSquare) {
 
 bool IsSafeSquare(int square) {
     switch (square) {
-        case 1: case 14: case 27: case 40: // starting squares (Red, Blue, Yellow, Green)
+        case 2: case 15: case 41: case 28: // starting squares (Red, Blue, Yellow, Green)
         case 7: case 20: case 33: case 46: // mid-sector star squares
+         case 10: case 23: case 36: case 49: // additional safe squares
             return true;
         default:
             return false;
@@ -92,31 +93,31 @@ void SendTokenToBase(Token *t) {
 // Base yards hold the 2 token spots in the four corner quadrants.
 static void classic_home_and_base(Game *g) {
     // Home lane grid coords per player (inward toward center (7,7)).
-    static const int hr[MAX_PLAYERS][HOME_STEPS] = {
-        {7, 7, 7, 7, 7, 7},       // Red:   row 7, cols 1..6 (enters from (7,0))
-        {1, 2, 3, 4, 5, 6},       // Blue:  col 7, rows 1..6 (enters from (0,7))
-        {13, 12, 11, 10, 9, 8},   // Green: col 7, rows 13..8 (enters from (14,7))
-        {7, 7, 7, 7, 7, 7}        // Yellow: row 7, cols 13..8 (enters from (7,14))
-    };
-    static const int hc[MAX_PLAYERS][HOME_STEPS] = {
-        {1, 2, 3, 4, 5, 6},
-        {7, 7, 7, 7, 7, 7},
-        {7, 7, 7, 7, 7, 7},
-        {13, 12, 11, 10, 9, 8}
-    };
+static const int hr[MAX_PLAYERS][HOME_STEPS] = {
+    {7, 7, 7, 7, 7, 7},       // Red
+    {1, 2, 3, 4, 5, 6},       // Blue
+    {7, 7, 7, 7, 7, 7},       // Yellow
+    {13, 12, 11, 10, 9, 8}    // Green
+};
+static const int hc[MAX_PLAYERS][HOME_STEPS] = {
+    {1, 2, 3, 4, 5, 6},       // Red
+    {7, 7, 7, 7, 7, 7},       // Blue
+    {13, 12, 11, 10, 9, 8},    // Yellow
+    {7, 7, 7, 7, 7, 7}         // Green
+};
     // Base token spots: 2 diagonal cells of each corner 2x2 yard.
-    static const int br[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
-        {2, 4},    // Red (top-left yard)
-        {2, 4},    // Blue (top-right yard)
-        {10, 12},  // Green (bottom-right yard)
-        {10, 12}   // Yellow (bottom-left yard)
-    };
-    static const int bc[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
-        {2, 4},    // Red cols 2,4
-        {10, 12},  // Blue cols 10,12
-        {10, 12},  // Green cols 10,12
-        {2, 4}     // Yellow cols 2,4
-    };
+static const int br[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
+    {2, 2, 4, 4},       // Red - top-left
+    {2, 2, 4, 4},       // Blue - top-right
+    {10, 10, 12, 12},   // Yellow - bottom-right
+    {10, 10, 12, 12}    // Green - bottom-left
+};
+static const int bc[MAX_PLAYERS][TOKENS_PER_PLAYER] = {
+    {2, 4, 2, 4},       // Red - top-left
+    {10, 12, 10, 12},   // Blue - top-right
+    {10, 12, 10, 12},   // Yellow - bottom-right
+    {2, 4, 2, 4}        // Green - bottom-left
+};
 
     for (int p = 0; p < MAX_PLAYERS; p++) {
         for (int i = 0; i < HOME_STEPS; i++) {

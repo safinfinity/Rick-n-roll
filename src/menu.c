@@ -3,6 +3,28 @@
 #include "pokemon.h"
 #include <string.h>
 #include <stdio.h>
+static Vector2 GetVirtualMousePosition(void)
+{
+    Vector2 mouse = GetVirtualMousePosition();
+
+    float screenW = (float)GetScreenWidth();
+    float screenH = (float)GetScreenHeight();
+
+    float scaleX = screenW / (float)WINDOW_W;
+    float scaleY = screenH / (float)WINDOW_H;
+    float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+    float drawW = WINDOW_W * scale;
+    float drawH = WINDOW_H * scale;
+
+    float offsetX = (screenW - drawW) / 2.0f;
+    float offsetY = (screenH - drawH) / 2.0f;
+
+    return (Vector2){
+        (mouse.x - offsetX) / scale,
+        (mouse.y - offsetY) / scale
+    };
+}
 
 static Rectangle classicBtn = {WINDOW_W/2 - 150, 280, 300, 60};
 static Rectangle ladderBtn  = {WINDOW_W/2 - 150, 370, 300, 60};

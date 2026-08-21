@@ -16,10 +16,12 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_ELECTRIC]  = LoadTexture("assets/images/electric.png");
     g->pokeSprites[POKE_PSYCHIC]   = LoadTexture("assets/images/psychic.png");
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
+    g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
+g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
 }
 
 static void unload_poke_sprites(Game *g) {
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i < 9; i++) {
         UnloadTexture(g->pokeSprites[i]);
     }
 }
@@ -28,11 +30,30 @@ static void unload_poke_sprites(Game *g) {
 
 // Advance the turn to the next player who has not finished.
 static void advance_turn(Game *g) {
-    int next = g->currentPlayer;
+    // Desired turn order:
+    // Red -> Blue -> Yellow -> Green -> Red
+    static const int turnOrder[MAX_PLAYERS] = {0, 1, 2, 3};
+
+    int currentIndex = 0;
+
+    // Find current player's position in the turn order
+    for (int i = 0; i < g->playerCount; i++) {
+        if (turnOrder[i] == g->currentPlayer) {
+            currentIndex = i;
+            break;
+        }
+    }
+
+    int nextIndex = currentIndex;
+
     do {
-        next = (next + 1) % g->playerCount;
-    } while (g->players[next].finished && next != g->currentPlayer);
-    g->currentPlayer = next;
+        nextIndex = (nextIndex + 1) % g->playerCount;
+    } while (
+        g->players[turnOrder[nextIndex]].finished &&
+        nextIndex != currentIndex
+    );
+
+    g->currentPlayer = turnOrder[nextIndex];
 }
 
 // Find an opponent's ACTIVE token standing on the same square as mine
@@ -168,9 +189,14 @@ static void draw_game_over(Game *g) { //static means this helper function can on
 
     DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 560, 20, (Color){255, 202, 40, 255});
 }
-
 int main(void) {
     InitWindow(WINDOW_W, WINDOW_H, "Rick-n-roll");
+
+    // Render the game at a fixed virtual resolution.
+    // This lets us scale the entire game cleanly in fullscreen.
+    RenderTexture2D gameTarget = LoadRenderTexture(WINDOW_W, WINDOW_H);
+    SetTextureFilter(gameTarget.texture, TEXTURE_FILTER_BILINEAR);
+
     SetTargetFPS(60);
 
     Game game = {0};
@@ -183,6 +209,10 @@ int main(void) {
     int turnRoll = 0;                 // classic: dice value of the current turn
 
     while (!WindowShouldClose()) {
+                // F11 toggles fullscreen
+        if (IsKeyPressed(KEY_F11)) {
+            ToggleFullscreen();
+        }
 
         // Menu handling: only runs while on a menu screen
         if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) {
@@ -366,7 +396,10 @@ int main(void) {
             }
         }
 
-        BeginDrawing();
+        // ---------------------------------------------------------
+        // DRAW GAME TO FIXED 1200x800 VIRTUAL SCREEN
+        // ---------------------------------------------------------
+        BeginTextureMode(gameTarget);
         ClearBackground((Color){15, 15, 30, 255});
 
         if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) {
@@ -420,10 +453,58 @@ int main(void) {
             }
         }
 
+           EndTextureMode();
+
+        // ---------------------------------------------------------
+        // DRAW VIRTUAL SCREEN TO ACTUAL WINDOW
+        // ---------------------------------------------------------
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        float screenW = (float)GetScreenWidth();
+        float screenH = (float)GetScreenHeight();
+
+        // Keep the original 1200x800 aspect ratio.
+        float scaleX = screenW / (float)WINDOW_W;
+        float scaleY = screenH / (float)WINDOW_H;
+        float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+        float drawW = WINDOW_W * scale;
+        float drawH = WINDOW_H * scale;
+
+        float offsetX = (screenW - drawW) / 2.0f;
+        float offsetY = (screenH - drawH) / 2.0f;
+
+        Rectangle source = {
+            0,
+            0,
+            (float)WINDOW_W,
+            -(float)WINDOW_H
+        };
+
+        Rectangle destination = {
+            offsetX,
+            offsetY,
+            drawW,
+            drawH
+        };
+
+        DrawTexturePro(
+            gameTarget.texture,
+            source,
+            destination,
+            (Vector2){0, 0},
+            0.0f,
+            WHITE
+        );
+
         EndDrawing();
     }
 
     unload_poke_sprites(&game);
+    UnloadRenderTexture(gameTarget);
     CloseWindow();
+
     return 0;
 }
