@@ -18,6 +18,11 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
     g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
 g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
+
+    // Smooth sprite scaling when the window is resized/fullscreened.
+    for (int i = 1; i < 9; i++) {
+        SetTextureFilter(g->pokeSprites[i], TEXTURE_FILTER_BILINEAR);
+    }
 }
 
 static void unload_poke_sprites(Game *g) {
@@ -191,14 +196,18 @@ static void draw_game_over(Game *g) { //static means this helper function can on
     DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 560, 20, (Color){255, 255, 255, 255});
 }
 int main(void) {
+    // 1200x800 is the logical design resolution. The actual window is
+    // resizable; Camera2D scales the game directly to the framebuffer.
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_MSAA_4X_HINT);
     InitWindow(WINDOW_W, WINDOW_H, "Rick-n-roll");
-    
-    // Render the game at a fixed virtual resolution.
-    // This lets us scale the entire game cleanly in fullscreen.
-    RenderTexture2D gameTarget = LoadRenderTexture(WINDOW_W, WINDOW_H);
-    SetTextureFilter(gameTarget.texture, TEXTURE_FILTER_BILINEAR);
-
+    SetWindowMinSize(800, 533);
     SetTargetFPS(60);
+
+    Camera2D gameCamera = {0};
+    gameCamera.target = (Vector2){WINDOW_W / 2.0f, WINDOW_H / 2.0f};
+    gameCamera.offset = (Vector2){WINDOW_W / 2.0f, WINDOW_H / 2.0f};
+    gameCamera.rotation = 0.0f;
+    gameCamera.zoom = 1.0f;
 
     Game game = {0};
     game_init(&game);
@@ -398,9 +407,25 @@ int main(void) {
         }
 
         // ---------------------------------------------------------
-        // DRAW GAME TO FIXED 1200x800 VIRTUAL SCREEN
+        // DRAW AT THE LOGICAL 1200x800 GAME COORDINATES.
+        // Camera2D scales those coordinates to the current window size.
         // ---------------------------------------------------------
-        BeginTextureMode(gameTarget);
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        float screenW = (float)GetScreenWidth();
+        float screenH = (float)GetScreenHeight();
+
+        // Preserve the 1200x800 aspect ratio so the board is never stretched.
+        float scaleX = screenW / (float)WINDOW_W;
+        float scaleY = screenH / (float)WINDOW_H;
+        float scale = (scaleX < scaleY) ? scaleX : scaleY;
+
+        gameCamera.target = (Vector2){WINDOW_W / 2.0f, WINDOW_H / 2.0f};
+        gameCamera.offset = (Vector2){screenW / 2.0f, screenH / 2.0f};
+        gameCamera.zoom = scale;
+
+        BeginMode2D(gameCamera);
         ClearBackground((Color){15, 15, 30, 255});
 
         if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) {
@@ -454,57 +479,11 @@ int main(void) {
             }
         }
 
-           EndTextureMode();
-
-        // ---------------------------------------------------------
-        // DRAW VIRTUAL SCREEN TO ACTUAL WINDOW
-        // ---------------------------------------------------------
-
-        BeginDrawing();
-        ClearBackground(BLACK);
-
-        float screenW = (float)GetScreenWidth();
-        float screenH = (float)GetScreenHeight();
-
-        // Keep the original 1200x800 aspect ratio.
-        float scaleX = screenW / (float)WINDOW_W;
-        float scaleY = screenH / (float)WINDOW_H;
-        float scale = (scaleX < scaleY) ? scaleX : scaleY;
-
-        float drawW = WINDOW_W * scale;
-        float drawH = WINDOW_H * scale;
-
-        float offsetX = (screenW - drawW) / 2.0f;
-        float offsetY = (screenH - drawH) / 2.0f;
-
-        Rectangle source = {
-            0,
-            0,
-            (float)WINDOW_W,
-            -(float)WINDOW_H
-        };
-
-        Rectangle destination = {
-            offsetX,
-            offsetY,
-            drawW,
-            drawH
-        };
-
-        DrawTexturePro(
-            gameTarget.texture,
-            source,
-            destination,
-            (Vector2){0, 0},
-            0.0f,
-            WHITE
-        );
-
+        EndMode2D();
         EndDrawing();
     }
 
     unload_poke_sprites(&game);
-    UnloadRenderTexture(gameTarget);
     CloseWindow();
 
     return 0;
