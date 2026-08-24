@@ -45,7 +45,7 @@ typedef enum {
     STATE_MENU, //in use
     STATE_MODE_SELECT, 
     STATE_PLAYER_COUNT,
-    STATE_DRAFT,
+    //STATE_DRAFT,
     STATE_PLAYING,// in use
     STATE_ROLLING,
     STATE_MOVING,

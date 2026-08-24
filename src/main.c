@@ -60,7 +60,7 @@ static void advance_turn(Game *g) {
 static int find_opponent_on(Game *g, int square, int myPlayer, int *oppToken) {  //Which player is the opponent? and Which token of that player is there? int *opptoken is a pointer as it returns these q/a
 
     for (int p = 0; p < g->playerCount; p++) {
-        if (p == myPlayer) continue; // if two tokens from palyerb 1 lands on same square, dont initiate a battle
+        if (p == myPlayer) continue; // if two tokens from palyer 1 lands on same square, dont initiate a battle
         for (int k = 0; k < TOKENS_PER_PLAYER; k++) { // 2 for loops bcs, each 4 player has 2 poke tokens
             Token *t = &g->players[p].tokens[k]; // g->players[2].tokens[1] means player 2's 2nd poke, & for the address where its located
             if (t->state == TOKEN_ACTIVE && GetSharedBoardSquare(p, t->progress) == square) {
