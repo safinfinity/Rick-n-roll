@@ -5,7 +5,9 @@
 #include <stdio.h>
 static Vector2 GetVirtualMousePosition(void)
 {
-    Vector2 mouse = GetVirtualMousePosition();
+    // Convert the real mouse position to the logical 1200x800 game space.
+    // This matches the Camera2D transform used by main.c.
+    Vector2 mouse = GetMousePosition();
 
     float screenW = (float)GetScreenWidth();
     float screenH = (float)GetScreenHeight();
@@ -14,11 +16,8 @@ static Vector2 GetVirtualMousePosition(void)
     float scaleY = screenH / (float)WINDOW_H;
     float scale = (scaleX < scaleY) ? scaleX : scaleY;
 
-    float drawW = WINDOW_W * scale;
-    float drawH = WINDOW_H * scale;
-
-    float offsetX = (screenW - drawW) / 2.0f;
-    float offsetY = (screenH - drawH) / 2.0f;
+    float offsetX = (screenW - WINDOW_W * scale) / 2.0f;
+    float offsetY = (screenH - WINDOW_H * scale) / 2.0f;
 
     return (Vector2){
         (mouse.x - offsetX) / scale,
@@ -36,7 +35,7 @@ void menu_init(void) {
 }
 
 int menu_update(Game *g) {
-    Vector2 mouse = GetMousePosition();
+    Vector2 mouse = GetVirtualMousePosition();
 
     if (g->state == STATE_MENU) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -76,12 +75,12 @@ void menu_draw(Game *g) {
         DrawText("Rick N Roll", WINDOW_W/2 - MeasureText("Rick N Roll", 60)/2, 100, 60, GOLD);
         DrawText("Pokemon + Ludo Board Game", WINDOW_W/2 - MeasureText("Pokemon + Ludo Board Game", 22)/2, 175, 22, LIGHTGRAY);
 
-        bool hoverC = CheckCollisionPointRec(GetMousePosition(), classicBtn);
+        bool hoverC = CheckCollisionPointRec(GetVirtualMousePosition(), classicBtn);
         DrawRectangleRec(classicBtn, hoverC ? (Color){80, 50, 50, 255} : (Color){60, 30, 30, 255});
         DrawRectangleLinesEx(classicBtn, 2, GOLD);
         DrawText("CLASSIC MODE", (int)(classicBtn.x + 40), (int)(classicBtn.y + 15), 24, WHITE);
 
-        bool hoverL = CheckCollisionPointRec(GetMousePosition(), ladderBtn);
+        bool hoverL = CheckCollisionPointRec(GetVirtualMousePosition(), ladderBtn);
         DrawRectangleRec(ladderBtn, hoverL ? (Color){50, 80, 50, 255} : (Color){30, 60, 30, 255});
         DrawRectangleLinesEx(ladderBtn, 2, GOLD);
         DrawText("LADDER MODE", (int)(ladderBtn.x + 40), (int)(ladderBtn.y + 15), 24, WHITE);
@@ -98,7 +97,7 @@ void menu_draw(Game *g) {
         Rectangle btns[] = {p2Btn, p3Btn, p4Btn};
         const char* labels[] = {"2 Players", "3 Players", "4 Players"};
         for (int i = 0; i < 3; i++) {
-            bool hover = CheckCollisionPointRec(GetMousePosition(), btns[i]);
+            bool hover = CheckCollisionPointRec(GetVirtualMousePosition(), btns[i]);
             DrawRectangleRec(btns[i], hover ? (Color){60, 60, 100, 255} : (Color){40, 40, 70, 255});
             DrawRectangleLinesEx(btns[i], 2, GOLD);
             DrawText(labels[i], (int)(btns[i].x + 20), (int)(btns[i].y + 13), 18, WHITE);
