@@ -144,13 +144,14 @@ static void resolve_battle(Game *g) {
 
 //shows game over page ki show korbe 
 static void draw_game_over(Game *g) { //static means this helper function can only be used inside main.c.
-    DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){10, 10, 30, 240});
-    DrawText("GAME OVER", WINDOW_W/2 - MeasureText("GAME OVER", 48)/2, 120, 48, (Color){255, 202, 40, 255});
+    DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){255, 127, 127, 255});
 
+    DrawText("GAME OVER",/*placing text at horizontal center*/ WINDOW_W/2 - MeasureText("GAME OVER", 48/*font size 48*/)/2, 120, 48, (Color){255, 255, 255, 255});
+    //DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){209, 232, 252, 255});
     if (g->mode == MODE_CLASSIC) {
         for (int i = 0; i < g->playerCount; i++) {
-            if (g->players[i].finished && g->players[i].finishOrder == 1) {
-                char winBuf[128];
+            if (g->players[i].finished && g->players[i].finishOrder == 1) {//checks if a player has finished and if he was the first to finish
+                char winBuf[128];// winner message
                 sprintf(winBuf, "%s WINS!", g->players[i].name);
                 DrawText(winBuf, WINDOW_W/2 - MeasureText(winBuf, 40)/2, 210, 40, g->players[i].color);
 
@@ -170,7 +171,7 @@ static void draw_game_over(Game *g) { //static means this helper function can on
                     g->players[i].wins);
             DrawText(resBuf, WINDOW_W/2 - MeasureText(resBuf, 18)/2, 350 + i * 32, 18, (Color){180, 180, 200, 255});
         }
-    } else {
+    } else {//g->mode != MODE_CLASSIC
         for (int i = 0; i < g->playerCount; i++) {
             if (g->players[i].finishOrder == 1) {
                 char winBuf[128];
@@ -183,15 +184,15 @@ static void draw_game_over(Game *g) { //static means this helper function can on
             char resBuf[64];
             sprintf(resBuf, "#%d %s (%s) - Wins: %d", g->players[i].finishOrder,
                     g->players[i].name, g->players[i].pokemon.name, g->players[i].wins);
-            DrawText(resBuf, WINDOW_W/2 - MeasureText(resBuf, 18)/2, 350 + i * 30, 18, (Color){180, 180, 200, 255});
+            DrawText(resBuf, WINDOW_W/2 - MeasureText(resBuf, 18)/2, 350 + i * 30, 18, (Color){0, 0, 0, 255});
         }
     }
 
-    DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 560, 20, (Color){255, 202, 40, 255});
+    DrawText("Press SPACE to play again", WINDOW_W/2 - 160, 560, 20, (Color){255, 255, 255, 255});
 }
 int main(void) {
     InitWindow(WINDOW_W, WINDOW_H, "Rick-n-roll");
-
+    
     // Render the game at a fixed virtual resolution.
     // This lets us scale the entire game cleanly in fullscreen.
     RenderTexture2D gameTarget = LoadRenderTexture(WINDOW_W, WINDOW_H);
