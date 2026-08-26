@@ -86,7 +86,7 @@ static void start_battle_tokens(Game *g, int atkPlayer, int atkToken, int defPla
     g->battle.defenderIdx = defPlayer;
     g->battle.attackerToken = atkToken;
     g->battle.defenderToken = defToken;
-    g->battle.rollsLeft = DICE_ROLLS_PER_BATTLE;
+    g->battle.rollsLeft = 0;
     g->battle.attackerHp = atk->pokemon.hp;
     g->battle.defenderHp = def->pokemon.hp;
     g->battle.attackerMaxHp = atk->pokemon.maxHp;
@@ -216,7 +216,10 @@ int main(void) {
     Dice dice = {0};
     bool wasRolling = false;
     bool awaitingTokenChoice = false; // classic: waiting for a token key press
-    int turnRoll = 0;                 // classic: dice value of the current turn
+    int turnRolls[3] = {0, 0, 0};    // all dice values earned in the current Classic turn
+    int turnRollCount = 0;            // number of stored rolls (1-3)
+    int turnRollIndex = 0;            // roll currently being applied
+    int sixCount = 0;                  // consecutive sixes in this turn
 
     while (!WindowShouldClose()) {
                 // F11 toggles fullscreen
@@ -245,6 +248,10 @@ int main(void) {
                 }
                 game.currentPlayer = 0; // Red always starts
                 awaitingTokenChoice = false;
+                turnRollCount = 0;
+                turnRollIndex = 0;
+                sixCount = 0;
+                memset(turnRolls, 0, sizeof(turnRolls));
                 game.state = STATE_PLAYING;
             }
         }
@@ -259,17 +266,52 @@ int main(void) {
 
         if (diceJustFinished && game.state == STATE_PLAYING) {
             if (game.mode == MODE_CLASSIC) {
-                turnRoll = dice.value;
-                int pl = game.currentPlayer;
-                bool any = false;
-                for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
-                    Token *t = &game.players[pl].tokens[i];
-                    if (CanDeployToken(t, turnRoll) || CanMoveToken(t, turnRoll)) { any = true; break; }
-                }
-                if (any) {
-                    awaitingTokenChoice = true;
+                int rolled = dice.value;
+                // Store every roll. A 6 grants another roll, but NEVER starts
+                // that roll automatically. The player must press SPACE again.
+                if (turnRollCount < 3) turnRolls[turnRollCount++] = rolled;
+
+                if (rolled == 6) {
+                    sixCount++;
+                    // Three sixes in one turn cancel the entire turn.
+                    if (sixCount >= 3) {
+                        turnRollCount = 0;
+                        turnRollIndex = 0;
+                        sixCount = 0;
+                        memset(turnRolls, 0, sizeof(turnRolls));
+                        awaitingTokenChoice = false;
+                        advance_turn(&game);
+                    }
+                    // Otherwise wait for SPACE. No movement happens yet.
                 } else {
-                    advance_turn(&game); // no legal move -> turn is forfeited
+                    // First non-6 ends the rolling phase; all stored values
+                    // can now be spent independently.
+                    sixCount = 0;
+                    turnRollIndex = 0;
+                    while (turnRollIndex < turnRollCount) {
+                        int value = turnRolls[turnRollIndex];
+                        int pl = game.currentPlayer;
+                        bool any = false;
+                        for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
+                            Token *t = &game.players[pl].tokens[i];
+                            if (CanDeployToken(t, value) || CanMoveToken(t, value)) {
+                                any = true;
+                                break;
+                            }
+                        }
+                        if (any) {
+                            awaitingTokenChoice = true;
+                            break;
+                        }
+                        turnRollIndex++;
+                    }
+                    if (turnRollIndex >= turnRollCount) {
+                        turnRollCount = 0;
+                        turnRollIndex = 0;
+                        memset(turnRolls, 0, sizeof(turnRolls));
+                        awaitingTokenChoice = false;
+                        advance_turn(&game);
+                    }
                 }
             } else {
                 // ── Ladder mode: single-token movement ──
@@ -278,8 +320,6 @@ int main(void) {
                     int newPos = cur->position + dice.value;
                     if (newPos > BOARD_SQUARES) newPos = BOARD_SQUARES;
                     cur->position = newPos;
-
-                    // Collision with another player -> battle
                     if (cur->position > 0) {
                         for (int i = 0; i < game.playerCount; i++) {
                             if (i != game.currentPlayer &&
@@ -289,50 +329,39 @@ int main(void) {
                                 game.battle.defenderIdx = i;
                                 game.battle.attackerToken = 0;
                                 game.battle.defenderToken = 0;
-                                game.battle.rollsLeft = DICE_ROLLS_PER_BATTLE;
+                                game.battle.rollsLeft = 0;
                                 game.battle.attackerHp = cur->pokemon.hp;
                                 game.battle.defenderHp = game.players[i].pokemon.hp;
                                 game.battle.attackerMaxHp = cur->pokemon.maxHp;
                                 game.battle.defenderMaxHp = game.players[i].pokemon.maxHp;
                                 game.battle.finished = false;
                                 game.battle.currentRoll = 0;
-                                sprintf(game.battle.message, "BATTLE! %s vs %s!",
-                                        cur->name, game.players[i].name);
+                                sprintf(game.battle.message, "BATTLE! %s vs %s!", cur->name, game.players[i].name);
                                 game.battle.messageTimer = 60;
                                 game.state = STATE_BATTLE;
                                 break;
                             }
                         }
                     }
-
-                    // Reached the end
                     if (cur->position >= BOARD_SQUARES) {
                         cur->finished = true;
                         cur->finishOrder = 1;
                         for (int i = 0; i < game.playerCount; i++) {
-                            if (game.players[i].finished && i != game.currentPlayer) {
+                            if (game.players[i].finished && i != game.currentPlayer)
                                 cur->finishOrder = game.players[i].finishOrder + 1;
-                            }
                         }
                     }
-
-                    // All players finished -> game over
                     int finishedCount = 0;
-                    for (int i = 0; i < game.playerCount; i++) {
+                    for (int i = 0; i < game.playerCount; i++)
                         if (game.players[i].finished) finishedCount++;
-                    }
-                    if (finishedCount >= game.playerCount) {
-                        game.state = STATE_GAME_OVER;
-                    }
+                    if (finishedCount >= game.playerCount) game.state = STATE_GAME_OVER;
                 }
-
-                if (game.state == STATE_PLAYING) {
-                    advance_turn(&game);
-                }
+                if (game.state == STATE_PLAYING) advance_turn(&game);
             }
         }
 
-        // Classic mode: player picks which token acts (keys 1-2)
+        // Classic mode: spend stored dice values one at a time.
+        // Each value is independent: 6,2 may be deploy+move, move+move, etc.
         if (awaitingTokenChoice && game.state == STATE_PLAYING) {
             int pick = -1;
             if (IsKeyPressed(KEY_ONE)) pick = 0;
@@ -340,21 +369,21 @@ int main(void) {
             else if (IsKeyPressed(KEY_THREE)) pick = 2;
             else if (IsKeyPressed(KEY_FOUR)) pick = 3;
 
-            if (pick >= 0) {
+            if (pick >= 0 && turnRollIndex < turnRollCount) {
                 int pl = game.currentPlayer;
+                int roll = turnRolls[turnRollIndex];
                 Token *t = &game.players[pl].tokens[pick];
+                bool used = false;
+                bool battled = false;
 
-                if (CanDeployToken(t, turnRoll)) {
+                if (CanDeployToken(t, roll)) {
                     t->state = TOKEN_ACTIVE;
-                    t->progress = 1; // onto the player's starting square
-                    awaitingTokenChoice = false;
-                    if (turnRoll != 6) advance_turn(&game); // 6 grants an extra turn
-                } else if (CanMoveToken(t, turnRoll)) {
-                    MoveToken(t, turnRoll);
-                    awaitingTokenChoice = false;
-
-                    bool battled = false;
-                    if (t->state == TOKEN_ACTIVE) { // still on the shared track
+                    t->progress = 1;
+                    used = true;
+                } else if (CanMoveToken(t, roll)) {
+                    MoveToken(t, roll);
+                    used = true;
+                    if (t->state == TOKEN_ACTIVE) {
                         int sq = GetSharedBoardSquare(pl, t->progress);
                         int oppToken = -1;
                         int opp = find_opponent_on(&game, sq, pl, &oppToken);
@@ -363,17 +392,40 @@ int main(void) {
                             battled = true;
                         }
                     }
+                }
 
-                    if (battled) {
-                        // turn advances after the battle resolves below
-                    } else {
+                if (used) {
+                    awaitingTokenChoice = false;
+                    turnRollIndex++;
+                    if (!battled && game.state == STATE_PLAYING) {
                         check_finish(&game);
-                        if (game.state == STATE_PLAYING && turnRoll != 6) {
-                            advance_turn(&game);
+                        if (game.state == STATE_PLAYING) {
+                            while (turnRollIndex < turnRollCount) {
+                                int nextRoll = turnRolls[turnRollIndex];
+                                bool any = false;
+                                for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
+                                    Token *nt = &game.players[pl].tokens[i];
+                                    if (CanDeployToken(nt, nextRoll) || CanMoveToken(nt, nextRoll)) {
+                                        any = true;
+                                        break;
+                                    }
+                                }
+                                if (any) {
+                                    awaitingTokenChoice = true;
+                                    break;
+                                }
+                                turnRollIndex++;
+                            }
+                            if (turnRollIndex >= turnRollCount) {
+                                turnRollCount = 0;
+                                turnRollIndex = 0;
+                                sixCount = 0;
+                                memset(turnRolls, 0, sizeof(turnRolls));
+                                advance_turn(&game);
+                            }
                         }
                     }
                 }
-                // invalid pick is ignored; the player stays in the choice state
             }
         }
 
@@ -384,7 +436,34 @@ int main(void) {
                 if (IsKeyPressed(KEY_SPACE)) {
                     resolve_battle(&game);
                     game.state = STATE_PLAYING;
-                    if (game.mode != MODE_CLASSIC || turnRoll != 6) {
+                    if (game.mode == MODE_CLASSIC) {
+                        // The triggering roll was already spent. Continue with
+                        // the next stored roll, if one remains.
+                        int pl = game.currentPlayer;
+                        while (turnRollIndex < turnRollCount) {
+                            int nextRoll = turnRolls[turnRollIndex];
+                            bool any = false;
+                            for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
+                                Token *nt = &game.players[pl].tokens[i];
+                                if (CanDeployToken(nt, nextRoll) || CanMoveToken(nt, nextRoll)) {
+                                    any = true;
+                                    break;
+                                }
+                            }
+                            if (any) {
+                                awaitingTokenChoice = true;
+                                break;
+                            }
+                            turnRollIndex++;
+                        }
+                        if (turnRollIndex >= turnRollCount) {
+                            turnRollCount = 0;
+                            turnRollIndex = 0;
+                            sixCount = 0;
+                            memset(turnRolls, 0, sizeof(turnRolls));
+                            advance_turn(&game);
+                        }
+                    } else {
                         advance_turn(&game);
                     }
                 }
@@ -402,7 +481,10 @@ int main(void) {
                 load_poke_sprites(&game);
                 dice = (Dice){0};
                 awaitingTokenChoice = false;
-                turnRoll = 0;
+                turnRollCount = 0;
+                turnRollIndex = 0;
+                sixCount = 0;
+                memset(turnRolls, 0, sizeof(turnRolls));
             }
         }
 
@@ -440,9 +522,23 @@ int main(void) {
             dice_draw(&dice, WINDOW_W - 150, 430);
 
             Player *cur = &game.players[game.currentPlayer];
-            char turnBuf[64];
-            sprintf(turnBuf, "%s's turn", cur->name);
-            DrawText(turnBuf, 20, 20, 20, cur->color);
+
+            // Prominent turn announcement: shown before the first roll of a
+            // turn and hidden as soon as that player starts rolling.
+            if (game.state == STATE_PLAYING && !dice.rolling &&
+                turnRollCount == 0 && !awaitingTokenChoice) {
+                char turnBuf[64];
+                sprintf(turnBuf, "%s's turn", cur->name);
+                int turnFont = 42;
+                int turnX = WINDOW_W / 2 - MeasureText(turnBuf, turnFont) / 2;
+                DrawText(turnBuf, turnX + 3, 18 + 3, turnFont, BLACK);
+                DrawText(turnBuf, turnX, 18, turnFont, cur->color);
+                DrawRectangleLinesEx(
+                    (Rectangle){(float)turnX - 16, 10,
+                                (float)MeasureText(turnBuf, turnFont) + 32,
+                                56},
+                    2, cur->color);
+            }
 
             if (game.mode == MODE_CLASSIC) {
                 char line[256] = "";
@@ -463,10 +559,27 @@ int main(void) {
                 }
                 DrawText(line, 20, 48, 14, (Color){180, 180, 200, 255});
 
+                if (turnRollCount > 0) {
+                    char rollsBuf[160] = "Rolls: ";
+                    for (int r = 0; r < turnRollCount; r++) {
+                        char part[24];
+                        if (r == turnRollIndex && awaitingTokenChoice)
+                            sprintf(part, "[%d] ", turnRolls[r]);
+                        else
+                            sprintf(part, "%d ", turnRolls[r]);
+                        strncat(rollsBuf, part, sizeof(rollsBuf) - strlen(rollsBuf) - 1);
+                    }
+                    DrawText(rollsBuf, 20, 78, 18, WHITE);
+                }
                 if (awaitingTokenChoice) {
-                    char prompt[64];
-                    sprintf(prompt, "Press 1-%d to choose a Pokemon to move", TOKENS_PER_PLAYER);
-                    DrawText(prompt, 20, 80, 18, (Color){255, 202, 40, 255});
+                    char prompt[96];
+                    sprintf(prompt, "Using roll %d: press 1-%d to choose a Pokemon",
+                            turnRolls[turnRollIndex], TOKENS_PER_PLAYER);
+                    DrawText(prompt, 20, 105, 18, (Color){255, 202, 40, 255});
+                } else if (!dice.rolling && game.state == STATE_PLAYING && turnRollCount > 0 && sixCount > 0) {
+                    char prompt[96];
+                    sprintf(prompt, "%d! Press SPACE to roll again", sixCount);
+                    DrawText(prompt, 20, 105, 18, (Color){255, 202, 40, 255});
                 }
             } else {
                 char pokeBuf[64];
@@ -475,7 +588,11 @@ int main(void) {
             }
 
             if (!dice.rolling && game.state == STATE_PLAYING && !awaitingTokenChoice) {
-                DrawText("Press SPACE to roll", WINDOW_W - 230, WINDOW_H - 30, 16, (Color){255, 202, 40, 255});
+                if (game.mode != MODE_CLASSIC || turnRollCount == 0) {
+                    DrawText("Press SPACE to roll", WINDOW_W - 230, WINDOW_H - 30, 16, (Color){255, 202, 40, 255});
+                } else if (sixCount > 0) {
+                    DrawText("SPACE = bonus roll", WINDOW_W - 230, WINDOW_H - 30, 16, (Color){255, 202, 40, 255});
+                }
             }
         }
 

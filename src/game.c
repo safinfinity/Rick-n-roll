@@ -45,9 +45,10 @@ void game_reset(Game *g) {
 
 // Process one dice roll in battle
 void battle_roll(Game *g) {
-    if (g->battle.rollsLeft <= 0) return;
-
+    // Battles are no longer limited to a fixed number of dice rolls.
+    // They continue until one Pokemon reaches 0 HP.
     int roll = GetRandomValue(1, 6);
+    g->battle.currentRoll = roll;
     int atkType, defType;
     if (g->mode == MODE_CLASSIC) {
         atkType = (int)g->players[g->battle.attackerIdx].tokens[g->battle.attackerToken].pokemon.type;
@@ -169,10 +170,10 @@ if (atkAdvantage && defAdvantage) {
             roll);
 }
 
-    // Check if battle is over
-    if (g->battle.rollsLeft <= 0 || g->battle.defenderHp <= 0 || g->battle.attackerHp <= 0) {
+    // Check if battle is over: HP reaching 0 is the only end condition.
+    if (g->battle.defenderHp <= 0 || g->battle.attackerHp <= 0) {
         g->battle.finished = true;
-        if (g->battle.attackerHp > g->battle.defenderHp) {
+        if (g->battle.defenderHp <= 0 && g->battle.attackerHp > 0) {
             g->battle.attackerWon = true;
             sprintf(g->battle.message, "%s wins the battle!",
                     g->players[g->battle.attackerIdx].name);

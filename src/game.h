@@ -16,7 +16,7 @@
 #define HOME_STEPS 6             // steps through the private home lane
 #define TOTAL_TRAVEL_STEPS 58    // SHARED_TRACK_STEPS + HOME_STEPS
 #define MAX_POKEMON_PARTY 3 // Max pokemon per player (unused yet — planned for Ladder Mode)
-#define DICE_ROLLS_PER_BATTLE 3
+#define DICE_ROLLS_PER_BATTLE 0 // 0 = unlimited; battles end only when a Pokemon reaches 0 HP
 #define BASE_HP 100
 #define TYPE_ADVANTAGE_BONUS 2
 #define MAX_LOG 10 // Planned: circular log of events (unused yet)

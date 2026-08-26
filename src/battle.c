@@ -21,7 +21,7 @@ static void draw_hp_bar(int x, int y, int w, int cur, int max) {
 static void draw_hp_text(int x, int y, int cur, int max) {
     char buf[32];
     sprintf(buf, "%3d/%3d", cur, max);
-    DrawText(buf, x, y, 12, BLACK);
+    DrawText(buf, x, y, 16, WHITE);
 }
 
 static void draw_type_badge(int x, int y, PokeType t) {
@@ -43,6 +43,15 @@ static void draw_sprite(int x, int y, Texture2D *tex) {
     } else {
         DrawRectangle(x + 4, y + 4, SPRITE_W - 8, SPRITE_H - 8, (Color){60, 60, 80, 255});
     }
+}
+
+static void draw_owner_marker(int x, int y, Color ownerColor) {
+    // Owner-color marker near the top/head area of the Pokemon image.
+    Vector2 marker = {x + SPRITE_W / 2.0f, y + 16.0f};
+    const float r = 3.0f;
+    DrawCircleV(marker, r + 1.0f, BLACK);
+    DrawCircleV(marker, r, ownerColor);
+    DrawCircleLinesV(marker, r, WHITE);
 }
 
 // Pokemon involved in the battle (token-aware in Classic mode).
@@ -73,12 +82,13 @@ void battle_draw(Game *g) {
 
         DrawRectangleLinesEx((Rectangle){(float)sx - 2, (float)sy - 2, (float)SPRITE_W + 4, (float)SPRITE_H + 4}, 2, (Color){50, 50, 50, 255});
         draw_sprite(sx, sy, &g->pokeSprites[defPok->type]);
+        draw_owner_marker(sx, sy, p->color);
         DrawRectangleLinesEx((Rectangle){(float)sx, (float)sy, (float)SPRITE_W, (float)SPRITE_H}, 2, WHITE);
 
-        DrawText(p->name, labX, labY, 16, BLACK);
+        DrawText(p->name, labX, labY, 18, WHITE);
         char lvBuf[16];
         sprintf(lvBuf, "Lv %d", 10);
-        DrawText(lvBuf, labX + MeasureText(p->name, 16) + 10, labY, 14, (Color){60, 60, 60, 255});
+        DrawText(lvBuf, labX + MeasureText(p->name, 18) + 12, labY, 18, WHITE);
 
         draw_hp_bar(labX, labY + 28, 130, b->defenderHp, b->defenderMaxHp);
         draw_hp_text(labX, labY + 44, b->defenderHp, b->defenderMaxHp);
@@ -88,18 +98,19 @@ void battle_draw(Game *g) {
 
     {
         Player *p = &g->players[atk];
-        int px = 50, py = WINDOW_H - 260;
+        int px = 50, py = WINDOW_H - 330;
         int sx = px + 250, sy = py;
         int labX = px, labY = py + 8;
 
         DrawRectangleLinesEx((Rectangle){(float)sx - 2, (float)sy - 2, (float)SPRITE_W + 4, (float)SPRITE_H + 4}, 2, (Color){50, 50, 50, 255});
         draw_sprite(sx, sy, &g->pokeSprites[atkPok->type]);
+        draw_owner_marker(sx, sy, p->color);
         DrawRectangleLinesEx((Rectangle){(float)sx, (float)sy, (float)SPRITE_W, (float)SPRITE_H}, 2, WHITE);
 
-        DrawText(p->name, labX, labY, 16, BLACK);
+        DrawText(p->name, labX, labY, 18, WHITE);
         char lvBuf[16];
         sprintf(lvBuf, "Lv %d", 10);
-        DrawText(lvBuf, labX + MeasureText(p->name, 16) + 10, labY, 14, (Color){60, 60, 60, 255});
+        DrawText(lvBuf, labX + MeasureText(p->name, 18) + 12, labY, 18, WHITE);
 
         draw_hp_bar(labX, labY + 28, 130, b->attackerHp, b->attackerMaxHp);
         draw_hp_text(labX, labY + 44, b->attackerHp, b->attackerMaxHp);
@@ -108,14 +119,15 @@ void battle_draw(Game *g) {
     }
 
     {
-        DrawText("VS", WINDOW_W / 2 - 15, 200, 28, (Color){255, 82, 82, 255});
+        DrawText("VS", WINDOW_W / 2 - MeasureText("VS", 28) / 2, 245, 28, (Color){255, 82, 82, 255});
 
         if (b->currentRoll > 0) {
-            int diceSize = 64;
+            int diceSize = 84;
             int dx = WINDOW_W / 2 - diceSize / 2;
-            int dy = 250;
+            int dy = 285;
             DrawRectangle(dx, dy, diceSize, diceSize, (Color){40, 40, 60, 255});
-            DrawRectangleLines(dx, dy, diceSize, diceSize, (Color){255, 202, 40, 255});
+            DrawRectangleLinesEx((Rectangle){(float)dx, (float)dy, (float)diceSize, (float)diceSize}, 3, (Color){255, 202, 40, 255});
+            DrawText("BATTLE DICE", WINDOW_W / 2 - MeasureText("BATTLE DICE", 16) / 2, dy - 24, 16, WHITE);
 
             int cx = dx + diceSize / 2;
             int cy = dy + diceSize / 2;
@@ -149,7 +161,7 @@ void battle_draw(Game *g) {
     bool atkAdv = poke_type_advantage(atkPok->type, defPok->type);
     bool defAdv = poke_type_advantage(defPok->type, atkPok->type);
 
-    int boxX = 40, boxY = WINDOW_H - 170, boxW = WINDOW_W - 80, boxH = 150;
+    int boxX = 40, boxY = WINDOW_H - 150, boxW = WINDOW_W - 80, boxH = 130;
     DrawRectangle(boxX, boxY, boxW, boxH, (Color){40, 40, 60, 255});
     DrawRectangleLines(boxX, boxY, boxW, boxH, (Color){120, 120, 140, 255});
     DrawRectangleLines(boxX + 2, boxY + 2, boxW - 4, boxH - 4, (Color){60, 60, 80, 255});
@@ -171,9 +183,9 @@ void battle_draw(Game *g) {
     }
 
     char rollBuf[32];
-    sprintf(rollBuf, "Rolls left: %d / %d", b->rollsLeft, DICE_ROLLS_PER_BATTLE);
-    DrawText(rollBuf, boxX + 24, textY, 14, (Color){180, 180, 200, 255});
-    textY += 22;
+    sprintf(rollBuf, "Battle continues until HP reaches 0");
+    DrawText(rollBuf, boxX + 24, textY, 16, WHITE);
+    textY += 24;
 
     if (!b->finished) {
         DrawText("Press SPACE to roll the dice", boxX + 24, textY, 16, (Color){255, 202, 40, 255});

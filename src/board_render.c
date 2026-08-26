@@ -40,6 +40,17 @@ static const char* square_label(SquareType t) {
     }
 }
 
+static void draw_owner_marker(Vector2 pos, Color ownerColor) {
+    // Small owner-color marker placed near the top of each Pokemon sprite.
+    // This makes identical Pokemon distinguishable when multiple players own
+    // the same species/type.
+    const float r = 3.0f;
+    Vector2 marker = {pos.x, pos.y - 14.0f};
+    DrawCircleV(marker, r + 1.0f, BLACK);
+    DrawCircleV(marker, r, ownerColor);
+    DrawCircleLinesV(marker, r, WHITE);
+}
+
 static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
     // Validate the Pokemon type before using it as an array index.
     if (t->pokemon.type <= POKE_NONE ||
@@ -74,6 +85,10 @@ static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
         scale,
         WHITE
     );
+
+    // Owner marker is deliberately drawn last so it stays visible over the
+    // Pokemon image.
+    draw_owner_marker(pos, pl->color);
 }
 
 static void draw_classic_board(Game *g) {

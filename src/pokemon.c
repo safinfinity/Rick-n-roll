@@ -4,7 +4,7 @@
 #include <string.h>
 
 static const char* type_names[] = {
-    "None", "Fire", "Water", "Grass", "Electric", "Psychic", "Dragon"
+    "None", "Fire", "Water", "Grass", "Electric", "Psychic", "Dragon", "Ice", "Fighting"
 };
 
 static const Color type_colors[] = {
@@ -14,7 +14,9 @@ static const Color type_colors[] = {
     {76, 175, 80, 255},
     {255, 235, 59, 255},
     {156, 39, 176, 255},
-    {121, 85, 72, 255}
+    {121, 85, 72, 255},
+    {90, 170, 255, 255},
+    {190, 120, 80, 255}
 };
 
 static int advantage[9][9] = {
@@ -39,12 +41,12 @@ static int advantage[9][9] = {
 };
 
 const char* poke_type_name(PokeType t) {
-    if (t < 0 || t >= 7) return "Unknown";
+    if (t < 0 || t > POKE_FIGHTING) return "Unknown";
     return type_names[t];
 }
 
 Color poke_type_color(PokeType t) {
-    if (t < 0 || t >= 7) return GRAY;
+    if (t < 0 || t > POKE_FIGHTING) return GRAY;
     return type_colors[t];
 }
 
