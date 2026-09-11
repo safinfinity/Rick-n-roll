@@ -372,6 +372,7 @@ int main(void) {
             if (pick >= 0 && turnRollIndex < turnRollCount) {
                 int pl = game.currentPlayer;
                 int roll = turnRolls[turnRollIndex];
+            
                 Token *t = &game.players[pl].tokens[pick];
                 bool used = false;
                 bool battled = false;
