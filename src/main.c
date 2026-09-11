@@ -17,7 +17,7 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_PSYCHIC]   = LoadTexture("assets/images/psychic.png");
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
     g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
-g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
+    g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
 
     // Smooth sprite scaling when the window is resized/fullscreened.
     for (int i = 1; i < 9; i++) {

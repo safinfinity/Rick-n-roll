@@ -1,7 +1,7 @@
 #include "game.h"
 #include "menu.h"
 #include "pokemon.h"
-#include <string.h>
+#include <string.h>// use korinai actually
 #include <stdio.h>
 static Vector2 GetVirtualMousePosition(void)
 {
@@ -9,29 +9,29 @@ static Vector2 GetVirtualMousePosition(void)
     // This matches the Camera2D transform used by main.c.
     Vector2 mouse = GetMousePosition();
 
-    float screenW = (float)GetScreenWidth();
-    float screenH = (float)GetScreenHeight();
+    float screenW = (float)GetScreenWidth();//this function returns acreen width
+    float screenH = (float)GetScreenHeight();//returns height
 
     float scaleX = screenW / (float)WINDOW_W;
     float scaleY = screenH / (float)WINDOW_H;
     float scale = (scaleX < scaleY) ? scaleX : scaleY;
 
-    float offsetX = (screenW - WINDOW_W * scale) / 2.0f;
-    float offsetY = (screenH - WINDOW_H * scale) / 2.0f;
+    float offsetX = (screenW - WINDOW_W * scale) / 2.0f;//horizontal empty space
+    float offsetY = (screenH - WINDOW_H * scale) / 2.0f;// vertical empty spcae
 
-    return (Vector2){
+    return (Vector2){ //returns a vector2 data type value instead of float
         (mouse.x - offsetX) / scale,
         (mouse.y - offsetY) / scale
     };
 }
-
-static Rectangle classicBtn = {WINDOW_W/2 - 150, 280, 300, 60};
+// why -150? we want to show classic and ladder at teh center of width 1200, and its own width is 300 so 300/2
+static Rectangle classicBtn = {WINDOW_W/2 - 150, 280, 300, 60};//{x,y,width,height}
 static Rectangle ladderBtn  = {WINDOW_W/2 - 150, 370, 300, 60};
 static Rectangle p2Btn      = {WINDOW_W/2 - 180, 260, 160, 50};
 static Rectangle p3Btn      = {WINDOW_W/2 + 20, 260, 160, 50};
 static Rectangle p4Btn      = {WINDOW_W/2 - 80,  340, 160, 50};
 
-void menu_init(void) {
+void menu_init(void) {// calling this from header. its a placeholder we kept for adding some features but later decided to not, eg, things popping up in a dynamic way one by one
 }
 
 int menu_update(Game *g) {
