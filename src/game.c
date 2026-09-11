@@ -1,46 +1,46 @@
-#include "game.h"
-#include "pokemon.h"
-#include "board.h"
+#include "game.h"    //includes the contents of another file here, like game states, modes etc.
+#include "pokemon.h"  //includes Pokémon-related definitions and functions.(pokemon, poke assign random())
+#include "board.h"   //includes the board-related definitions and functions.(board_init(g))
 #include <stdio.h>
 
-void game_init(Game *g) {
-    g->state = STATE_MENU;   // boot to title screen (was: jump straight into gameplay)
+void game_init(Game *g) {    //initializes the game, Game is a structure, *g pointer to a structure,
+    g->state = STATE_MENU;   // boot to title screen (was: jump straight into gameplay),Access the state member of the Game
     g->currentPlayer = 0;    // player 0 goes first
     g->turnCount = 0;        // no turns played yet
     g->playerCount = 0;      // set later in the menu (was hardcoded to 2)
     g->mode = MODE_CLASSIC;  // default mode; menu lets the player pick Classic or Ladder
 
-const char *names[] = {"Red", "Blue", "Yellow", "Green"};
-Color colors[] = {RED, BLUE, YELLOW, GREEN};
+const char *names[] = {"Red", "Blue", "Yellow", "Green"};    //creates an array of pointers to constant characters.(names[0] gives "Red")
+Color colors[] = {RED, BLUE, YELLOW, GREEN};                 //The array contains the colors corresponding to the players,Color is a raylib type
     for (int i = 0; i < MAX_PLAYERS; i++) {
-        g->players[i].id = i;
-        g->players[i].name = names[i];
-        g->players[i].color = colors[i];
-        g->players[i].position = 0;
-        g->players[i].finished = false;
-        g->players[i].finishOrder = 0;
-        g->players[i].wins = 0;
-        g->players[i].finishedCount = 0;
-        g->players[i].pokemon = (Pokemon){0};
+        g->players[i].id = i;                   //g->players is the players array,[i] selects the current player,.id accesses that player's ID.
+        g->players[i].name = names[i];          //gives each player their corresponding name.
+        g->players[i].color = colors[i];        //gives each player their corresponding color.
+        g->players[i].position = 0;             //sets the player's initial position to 0.
+        g->players[i].finished = false;         //sets whether the player has finished the game, initially false, false is a boolean value
+        g->players[i].finishOrder = 0;          //initializes the player's finishing position.
+        g->players[i].wins = 0;                 //initializes the player's number of wins to zero.
+        g->players[i].finishedCount = 0;        //the player currently has zero finished Pokémon/tokens,As tokens reach the destination, this value can increase
+        g->players[i].pokemon = (Pokemon){0};   //Pokemon is a structure defined in Pokémon code,and initializes its fields to default zero values
         for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
-            g->players[i].tokens[k].owner = i;
-            g->players[i].tokens[k].pokemon = (Pokemon){0};
-            g->players[i].tokens[k].state = TOKEN_BASE;
-            g->players[i].tokens[k].progress = 0;
+            g->players[i].tokens[k].owner = i;               //tells the token who owns it
+            g->players[i].tokens[k].pokemon = (Pokemon){0};  //every token starts with a default Pokémon
+            g->players[i].tokens[k].state = TOKEN_BASE;      //Every token starts inside its player's base
+            g->players[i].tokens[k].progress = 0;            //the token has made zero progress along the board 
         }
     }
 
-    poke_assign_random(g->players, g->playerCount);
-    board_init(g);
+    poke_assign_random(g->players, g->playerCount);    //calls the function,Take the players currently in the game and randomly assign Pokémon to them
+    board_init(g);                                     //calls the board initialization function 
 }
 
-void game_reset(Game *g) {
-    int count = g->playerCount;
-    GameMode mode = g->mode;
-    game_init(g);
-    g->playerCount = count;
-    g->mode = mode;
-    g->state = STATE_MENU;
+void game_reset(Game *g) {      //to reset the game
+    int count = g->playerCount; //saves the current number of players into a temporary variable called count
+    GameMode mode = g->mode;    //saves the current game mode.
+    game_init(g);               //essentially resets the game's data back to its initial state.
+    g->playerCount = count;     //we restore the previous number of players
+    g->mode = mode;                
+    g->state = STATE_MENU;      //After resetting, the game goes back to the menu.
 }
 
 // Process one dice roll in battle
