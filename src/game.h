@@ -1,5 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
+#define DEBUG_DICE 1
 
 #include "raylib.h"
 #include <stdbool.h>

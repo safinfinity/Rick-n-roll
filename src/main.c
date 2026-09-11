@@ -8,6 +8,10 @@
 #include "menu.h"
 #include <stdio.h>
 #include <string.h>
+#if DEBUG_DICE
+static int debugDiceValue = 1;
+static bool debugDiceManual = false;
+#endif
 
 static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_FIRE]      = LoadTexture("assets/images/fire.png");
@@ -256,9 +260,77 @@ int main(void) {
             }
         }
 
-        if (IsKeyPressed(KEY_SPACE) && !dice.rolling && game.state == STATE_PLAYING && !awaitingTokenChoice) {
+#if DEBUG_DICE
+
+// Debug dice controls:
+// 1-6 = choose the desired dice result
+// R   = return to random dice
+// SPACE = roll
+
+if (game.state == STATE_PLAYING &&
+    !dice.rolling &&
+    !awaitingTokenChoice) {
+
+    if (IsKeyPressed(KEY_ONE)) {
+        debugDiceValue = 1;
+        debugDiceManual = true;
+    }
+
+    if (IsKeyPressed(KEY_TWO)) {
+        debugDiceValue = 2;
+        debugDiceManual = true;
+    }
+
+    if (IsKeyPressed(KEY_THREE)) {
+        debugDiceValue = 3;
+        debugDiceManual = true;
+    }
+
+    if (IsKeyPressed(KEY_FOUR)) {
+        debugDiceValue = 4;
+        debugDiceManual = true;
+    }
+
+    if (IsKeyPressed(KEY_FIVE)) {
+        debugDiceValue = 5;
+        debugDiceManual = true;
+    }
+
+    if (IsKeyPressed(KEY_SIX)) {
+        debugDiceValue = 6;
+        debugDiceManual = true;
+    }
+
+    // R = return to normal random dice
+    if (IsKeyPressed(KEY_R)) {
+        debugDiceManual = false;
+    }
+
+    // SPACE = roll
+    if (IsKeyPressed(KEY_SPACE)) {
+
+        if (debugDiceManual) {
+            dice.value = debugDiceValue;
+            dice.rolling = true;
+            dice.rollTimer = 0;
+            dice.rollDuration = 30;
+        } else {
             dice_roll(&dice);
         }
+    }
+}
+
+#else
+
+if (IsKeyPressed(KEY_SPACE) &&
+    !dice.rolling &&
+    game.state == STATE_PLAYING &&
+    !awaitingTokenChoice) {
+
+    dice_roll(&dice);
+}
+
+#endif
 
         bool diceJustFinished = wasRolling && !dice.rolling;
         wasRolling = dice.rolling;
@@ -521,6 +593,33 @@ int main(void) {
             board_draw(&game);
             board_draw_hud(&game);
             dice_draw(&dice, WINDOW_W - 150, 430);
+            #if DEBUG_DICE
+
+char debugBuf[64];
+
+if (debugDiceManual) {
+    sprintf(debugBuf, "DEBUG: MANUAL (%d)", debugDiceValue);
+} else {
+    sprintf(debugBuf, "DEBUG: RANDOM");
+}
+
+int debugFont = 18;
+int debugWidth = MeasureText(debugBuf, debugFont);
+
+int debugX = WINDOW_W - 150 - debugWidth / 2;
+int debugY = 540;
+
+DrawText(
+    debugBuf,
+    debugX,
+    debugY,
+    debugFont,
+    debugDiceManual
+        ? (Color){255, 202, 40, 255}
+        : (Color){120, 220, 140, 255}
+);
+
+#endif
 
             Player *cur = &game.players[game.currentPlayer];
 
