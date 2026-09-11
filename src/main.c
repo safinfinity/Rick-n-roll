@@ -11,6 +11,7 @@
 #if DEBUG_DICE
 static int debugDiceValue = 1;
 static bool debugDiceManual = false;
+static bool debugDiceEnabled = false;
 #endif
 
 static void load_poke_sprites(Game *g) {
@@ -22,7 +23,7 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
     g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
     g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
-
+    g->pokeballTexture = LoadTexture("assets/images/pokeball.png");
     // Smooth sprite scaling when the window is resized/fullscreened.
     for (int i = 1; i < 9; i++) {
         SetTextureFilter(g->pokeSprites[i], TEXTURE_FILTER_BILINEAR);
@@ -33,6 +34,8 @@ static void unload_poke_sprites(Game *g) {
     for (int i = 1; i < 9; i++) {
         UnloadTexture(g->pokeSprites[i]);
     }
+
+    UnloadTexture(g->pokeballTexture);
 }
 
 // ── Classic Mode helpers ──
@@ -263,53 +266,62 @@ int main(void) {
 #if DEBUG_DICE
 
 // Debug dice controls:
-// 1-6 = choose the desired dice result
-// R   = return to random dice
-// SPACE = roll
+// R       = toggle Debug Dice mode
+// 1-6     = choose desired dice result (only when Debug Dice is ON)
+// SPACE   = roll
 
 if (game.state == STATE_PLAYING &&
     !dice.rolling &&
     !awaitingTokenChoice) {
 
-    if (IsKeyPressed(KEY_ONE)) {
-        debugDiceValue = 1;
-        debugDiceManual = true;
-    }
-
-    if (IsKeyPressed(KEY_TWO)) {
-        debugDiceValue = 2;
-        debugDiceManual = true;
-    }
-
-    if (IsKeyPressed(KEY_THREE)) {
-        debugDiceValue = 3;
-        debugDiceManual = true;
-    }
-
-    if (IsKeyPressed(KEY_FOUR)) {
-        debugDiceValue = 4;
-        debugDiceManual = true;
-    }
-
-    if (IsKeyPressed(KEY_FIVE)) {
-        debugDiceValue = 5;
-        debugDiceManual = true;
-    }
-
-    if (IsKeyPressed(KEY_SIX)) {
-        debugDiceValue = 6;
-        debugDiceManual = true;
-    }
-
-    // R = return to normal random dice
+    // R = toggle Debug Dice mode
     if (IsKeyPressed(KEY_R)) {
-        debugDiceManual = false;
+        debugDiceEnabled = !debugDiceEnabled;
+
+        // When turning debug mode OFF, return to random dice
+        if (!debugDiceEnabled) {
+            debugDiceManual = false;
+        }
+    }
+
+    // Only process 1-6 when Debug Dice is enabled
+    if (debugDiceEnabled) {
+
+        if (IsKeyPressed(KEY_ONE)) {
+            debugDiceValue = 1;
+            debugDiceManual = true;
+        }
+
+        if (IsKeyPressed(KEY_TWO)) {
+            debugDiceValue = 2;
+            debugDiceManual = true;
+        }
+
+        if (IsKeyPressed(KEY_THREE)) {
+            debugDiceValue = 3;
+            debugDiceManual = true;
+        }
+
+        if (IsKeyPressed(KEY_FOUR)) {
+            debugDiceValue = 4;
+            debugDiceManual = true;
+        }
+
+        if (IsKeyPressed(KEY_FIVE)) {
+            debugDiceValue = 5;
+            debugDiceManual = true;
+        }
+
+        if (IsKeyPressed(KEY_SIX)) {
+            debugDiceValue = 6;
+            debugDiceManual = true;
+        }
     }
 
     // SPACE = roll
     if (IsKeyPressed(KEY_SPACE)) {
 
-        if (debugDiceManual) {
+        if (debugDiceEnabled && debugDiceManual) {
             dice.value = debugDiceValue;
             dice.rolling = true;
             dice.rollTimer = 0;
@@ -596,10 +608,13 @@ if (IsKeyPressed(KEY_SPACE) &&
             #if DEBUG_DICE
 
 char debugBuf[64];
-
-if (debugDiceManual) {
+if (!debugDiceEnabled) {
+    sprintf(debugBuf, "DEBUG: OFF");
+}
+else if (debugDiceManual) {
     sprintf(debugBuf, "DEBUG: MANUAL (%d)", debugDiceValue);
-} else {
+}
+else {
     sprintf(debugBuf, "DEBUG: RANDOM");
 }
 
