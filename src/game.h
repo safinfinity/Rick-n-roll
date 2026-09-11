@@ -11,14 +11,14 @@
 #define BOARD_SQUARES 30         // Ladder mode: single-token linear board
 #define MAX_PLAYERS 4
 #define TOKENS_PER_PLAYER 4      // Classic mode: 4 Pokemon tokens per player
-#define POKEMON_POOL_SIZE 8
+#define POKEMON_POOL_SIZE 8      //pokemon options
 #define SHARED_TRACK_STEPS 52    // steps on shared cross track before home lane
 #define HOME_STEPS 6             // steps through the private home lane
 #define TOTAL_TRAVEL_STEPS 58    // SHARED_TRACK_STEPS + HOME_STEPS
 #define MAX_POKEMON_PARTY 3 // Max pokemon per player (unused yet — planned for Ladder Mode)
 #define DICE_ROLLS_PER_BATTLE 0 // 0 = unlimited; battles end only when a Pokemon reaches 0 HP
 #define BASE_HP 100
-#define TYPE_ADVANTAGE_BONUS 2
+#define TYPE_ADVANTAGE_BONUS 2// depends on battle code
 #define MAX_LOG 10 // Planned: circular log of events (unused yet)
 
 // ── Pokemon Types ──
@@ -49,7 +49,7 @@ typedef enum {
     STATE_PLAYING,// in use
     STATE_ROLLING,
     STATE_MOVING,
-    STATE_BATTLE, // in in use
+    STATE_BATTLE, // in use
     STATE_BATTLE_RESULT,
     STATE_GAME_OVER // in use
 } GameState;
