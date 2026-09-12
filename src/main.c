@@ -23,7 +23,7 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
     g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
     g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
-    g->pokeballTexture = LoadTexture("assets/images/pokeball.png");
+    //g->pokeballTexture = LoadTexture("assets/images/pokeball.png");
     // Smooth sprite scaling when the window is resized/fullscreened.
     for (int i = 1; i < 9; i++) {
         SetTextureFilter(g->pokeSprites[i], TEXTURE_FILTER_BILINEAR);
