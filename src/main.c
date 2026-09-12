@@ -14,7 +14,7 @@ static bool debugDiceManual = false;
 static bool debugDiceEnabled = false;
 #endif
 
-static void load_poke_sprites(Game *g) {
+static void load_poke_sprites(Game *g) {  //loading to vram
     g->pokeSprites[POKE_FIRE]      = LoadTexture("assets/images/fire.png");
     g->pokeSprites[POKE_WATER]     = LoadTexture("assets/images/water.png");
     g->pokeSprites[POKE_GRASS]     = LoadTexture("assets/images/grass.png");
@@ -23,14 +23,15 @@ static void load_poke_sprites(Game *g) {
     g->pokeSprites[POKE_DRAGON]    = LoadTexture("assets/images/dragon.png");
     g->pokeSprites[POKE_ICE]       = LoadTexture("assets/images/glaceon.png");
     g->pokeSprites[POKE_FIGHTING]  = LoadTexture("assets/images/machamp.png");
-    //g->pokeballTexture = LoadTexture("assets/images/pokeball.png");
+    g->pokeballTexture = LoadTexture("assets/images/pokeball.png");
+    
     // Smooth sprite scaling when the window is resized/fullscreened.
     for (int i = 1; i < 9; i++) {
         SetTextureFilter(g->pokeSprites[i], TEXTURE_FILTER_BILINEAR);
     }
 }
 
-static void unload_poke_sprites(Game *g) {
+static void unload_poke_sprites(Game *g) { //freeing memory again
     for (int i = 1; i < 9; i++) {
         UnloadTexture(g->pokeSprites[i]);
     }
@@ -50,7 +51,7 @@ static void advance_turn(Game *g) {
 
     // Find current player's position in the turn order
     for (int i = 0; i < g->playerCount; i++) {
-        if (turnOrder[i] == g->currentPlayer) {
+        if (turnOrder[i] == g->currentPlayer) {  //checks if akhn current player er dewar turn ashche nki na
             currentIndex = i;
             break;
         }
@@ -59,7 +60,7 @@ static void advance_turn(Game *g) {
     int nextIndex = currentIndex;
 
     do {
-        nextIndex = (nextIndex + 1) % g->playerCount;
+        nextIndex = (nextIndex + 1) % g->playerCount; // 4 hoye gele abr zero te anar jonno
     } while (
         g->players[turnOrder[nextIndex]].finished &&
         nextIndex != currentIndex
@@ -73,7 +74,7 @@ static int find_opponent_on(Game *g, int square, int myPlayer, int *oppToken) { 
 
     for (int p = 0; p < g->playerCount; p++) {
         if (p == myPlayer) continue; // if two tokens from palyer 1 lands on same square, dont initiate a battle
-        for (int k = 0; k < TOKENS_PER_PLAYER; k++) { // 2 for loops bcs, each 4 player has 2 poke tokens
+        for (int k = 0; k < TOKENS_PER_PLAYER; k++) { // 2 for loops bcs, each 4 player has 4 poke tokens
             Token *t = &g->players[p].tokens[k]; // g->players[2].tokens[1] means player 2's 2nd poke, & for the address where its located
             if (t->state == TOKEN_ACTIVE && GetSharedBoardSquare(p, t->progress) == square) {
                 *oppToken = k;// when if cond fulfilled, that token k of that player p is my opponent
@@ -235,16 +236,20 @@ int main(void) {
         }
 
         // Menu handling: only runs while on a menu screen
+
+
+        //"If we are currently in the menu, ask the menu what the user selected. If they selected a game mode, go to player-count screen. If they selected 2–4 players, set up the entire game and start playing."
         if (game.state == STATE_MENU || game.state == STATE_PLAYER_COUNT) {
-            int r = menu_update(&game);
+            int r = menu_update(&game);            //game contains all the information about the current game
             if (r == MENU_MODE_PICKED) {
-                game.state = STATE_PLAYER_COUNT;
+                game.state = STATE_PLAYER_COUNT;   //load player count screen only when game mode selected
             } else if (r >= 2 && r <= 4) {
-                game.playerCount = r;
+                game.playerCount = r; //re using variable r, aage 100 store korsilo
+                //
                 if (game.mode == MODE_CLASSIC)
-                    poke_assign_party(game.players, game.playerCount);
+                    poke_assign_party(game.players, game.playerCount); // pokemon assign er jonno respective function call kortese
                 else
-                    poke_assign_random(game.players, game.playerCount);
+                    poke_assign_random(game.players, game.playerCount); // game players = red, blue ; game player count 2
                 board_init(&game);
                 for (int i = 0; i < game.playerCount; i++) {
                     game.players[i].position = 0;
@@ -253,13 +258,13 @@ int main(void) {
                     game.players[i].wins = 0;
                     game.players[i].finishedCount = 0;
                 }
-                game.currentPlayer = 0; // Red always starts
+                game.currentPlayer = 0; // Red always starts and right now red is the current player
                 awaitingTokenChoice = false;
-                turnRollCount = 0;
+                turnRollCount = 0;      //zero dice rolls left for this turn
                 turnRollIndex = 0;
-                sixCount = 0;
-                memset(turnRolls, 0, sizeof(turnRolls));
-                game.state = STATE_PLAYING;
+                sixCount = 0;           // counts koyta 6 marse
+                memset(turnRolls, 0, sizeof(turnRolls));    //fill the full [6] [3] [0] with [0] [0] [0]
+                game.state = STATE_PLAYING;                 // etokhon shob set kortesilam
             }
         }
 
