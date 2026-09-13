@@ -90,7 +90,7 @@ typedef enum {
 typedef struct {
     int owner;          // owning player id (0-3)
     Pokemon pokemon;    // the Pokemon identity of this token
-    TokenState state;
+    TokenState state;//hehehe, token er state aseee
     int progress;       // 0 = base; 1..52 shared track; 53..57 home lane; 58 = goal
 } Token;
 
