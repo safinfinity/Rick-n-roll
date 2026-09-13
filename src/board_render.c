@@ -14,20 +14,20 @@
 #define LUDO_X 30.0f   
 #define LUDO_Y 100.0f  //These specify where the 15×15 Ludo grid starts on the screen
 
-static Color square_color(SquareType t) {
-    switch (t) {
-        case SQ_SAFE:     return (Color){200, 230, 200, 255};
-        case SQ_LADDER:   return (Color){180, 230, 180, 255};
-        case SQ_SNAKE:    return (Color){230, 180, 180, 255};
-        case SQ_EVOLUTION:return (Color){210, 180, 230, 255};
-        case SQ_HABITAT:  return (Color){180, 210, 230, 255};
-        case SQ_MYSTERY:  return (Color){230, 210, 180, 255};
-        case SQ_STONE:    return (Color){200, 200, 220, 255};
-        default:          return (Color){240, 235, 220, 255};
+static Color square_color(SquareType t) {                    //Given a type of board square, decide what color that square should be
+    switch (t) {//Here static means the function is private to this .c file,Other .c files cannot directly call this function
+        case SQ_SAFE:     return (Color){200, 230, 200, 255};//If the square is a safe square, return this Raylib color
+        case SQ_LADDER:   return (Color){180, 230, 180, 255};//Ladder → greenish color
+        case SQ_SNAKE:    return (Color){230, 180, 180, 255};//Snake → reddish color
+        case SQ_EVOLUTION:return (Color){210, 180, 230, 255};//Evolution → purple-ish color
+        case SQ_HABITAT:  return (Color){180, 210, 230, 255};//Habitat → blue-ish color
+        case SQ_MYSTERY:  return (Color){230, 210, 180, 255};//Mystery → beige-ish color
+        case SQ_STONE:    return (Color){200, 200, 220, 255};//Stone → gray-ish color
+        default:          return (Color){240, 235, 220, 255};//If t doesn't match any of the listed cases, use the default color
     }
 }
 
-static const char* square_label(SquareType t) {
+static const char* square_label(SquareType t) {  //takes a SquareType,returns a string
     switch (t) {
         case SQ_SAFE:     return "SAFE";
         case SQ_LADDER:   return "LADDER";
@@ -36,80 +36,80 @@ static const char* square_label(SquareType t) {
         case SQ_HABITAT:  return "WILD";
         case SQ_MYSTERY:  return "MYSTERY";
         case SQ_STONE:    return "STONE";
-        default:          return "";
+        default:          return "";           //For a normal square, return an empty string
     }
 }
 
-static void draw_owner_marker(Vector2 pos, Color ownerColor) {
+static void draw_owner_marker(Vector2 pos, Color ownerColor) {//draws a small marker showing which player owns a Pokémon/token
     // Small owner-color marker placed near the top of each Pokemon sprite.
     // This makes identical Pokemon distinguishable when multiple players own
     // the same species/type.
-    const float r = 3.0f;
-    Vector2 marker = {pos.x, pos.y - 14.0f};
-    DrawCircleV(marker, r + 1.0f, BLACK);
-    DrawCircleV(marker, r, ownerColor);
-    DrawCircleLinesV(marker, r, WHITE);
+    const float r = 3.0f;//Creates a constant floating-point variable r,So the marker's radius is 3 pixels
+    Vector2 marker = {pos.x, pos.y - 14.0f};//Creates a new Vector2 called marker,x=same as pokemon,y = Pokémon's y - 14
+    DrawCircleV(marker, r + 1.0f, BLACK);//Raylib function that draws a filled circle
+    DrawCircleV(marker, r, ownerColor);//Draws the smaller colored circle on top
+    DrawCircleLinesV(marker, r, WHITE);//Draws a white outline around the circle
 }
 
-static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {
+static void draw_token_small(Game *g, Token *t, Player *pl, Vector2 pos) {//draws a small Pokémon on the board.
     // Validate the Pokemon type before using it as an array index.
     if (t->pokemon.type <= POKE_NONE ||
-    t->pokemon.type > POKE_FIGHTING) {
+    t->pokemon.type > POKE_FIGHTING) {    //whether the Pokémon type is valid
 
-        DrawCircleV(pos, 18, pl->color);
-        DrawCircleLinesV(pos, 18, BLACK);
+        DrawCircleV(pos, 18, pl->color);  //If the Pokémon type is invalid, instead of trying to access a sprite, draw a simple circle using the player's color
+        DrawCircleLinesV(pos, 18, BLACK); //Draws a black outline around that circle
         return;
     }
 
-    Texture2D spr = g->pokeSprites[t->pokemon.type];
+    Texture2D spr = g->pokeSprites[t->pokemon.type];//Texture2D is a Raylib type used for an image,This gets the Pokémon's image from the sprite array
 
     // Texture wasn't loaded correctly.
-    if (spr.id == 0 || spr.width <= 0 || spr.height <= 0) {
-        DrawCircleV(pos, 18, poke_type_color(t->pokemon.type));
+    if (spr.id == 0 || spr.width <= 0 || spr.height <= 0) {//This checks if the texture is invalid
+        DrawCircleV(pos, 18, poke_type_color(t->pokemon.type));//If the sprite failed, draw a circle using the Pokémon type's color instead
         DrawCircleLinesV(pos, 18, pl->color);
         DrawCircleLinesV(pos, 18, BLACK);
         return;
     }
 
     // Keep the sprite inside the 44x44 board cell.
-    float spriteSize = 40.0f;
-    float scale = spriteSize / (float)spr.width;
+    float spriteSize = 40.0f;//The Pokémon sprite should be approximately 40 × 40 pixels
+    float scale = spriteSize / (float)spr.width;//calculates how much the original image needs to be scaled
 
-    DrawTextureEx(
-        spr,
+    DrawTextureEx(//Raylib function for drawing a texture with position,rotation,scale,tint
+        spr,     //The Pokémon image to draw
         (Vector2){
-            pos.x - spriteSize / 2.0f,
-            pos.y - spriteSize / 2.0f
+            pos.x - spriteSize / 2.0f,//calculates the top-left corner of the sprite
+            pos.y - spriteSize / 2.0f//subtraction because pos is being treated as the center of the Pokémon
         },
-        0.0f,
-        scale,
+        0.0f,//Rotation angle,0 meas dont rotate the angle
+        scale,//The scale calculated earlier
         WHITE
     );
 
     // Owner marker is deliberately drawn last so it stays visible over the
     // Pokemon image.
-    draw_owner_marker(pos, pl->color);
+    draw_owner_marker(pos, pl->color);//After drawing the Pokémon, draw the small player-color marker
 }
 
 static void draw_classic_board(Game *g) {
-    float bw = LUDO_GRID * LUDO_CELL;
-    DrawRectangle((int)LUDO_X - 16, (int)LUDO_Y - 16, (int)bw + 32, (int)bw + 32, (Color){25, 25, 45, 255});
-    DrawRectangleLinesEx((Rectangle){LUDO_X - 16, LUDO_Y - 16, bw + 32, bw + 32}, 2, (Color){90, 90, 120, 255});
+    float bw = LUDO_GRID * LUDO_CELL;//Calculates the board's total width
+    DrawRectangle((int)LUDO_X - 16, (int)LUDO_Y - 16, (int)bw + 32, (int)bw + 32, (Color){25, 25, 45, 255});//draws a large dark rectangle slightly bigger than the board
+    DrawRectangleLinesEx((Rectangle){LUDO_X - 16, LUDO_Y - 16, bw + 32, bw + 32}, 2, (Color){90, 90, 120, 255});//This draws an outline around that rectangle,2 means the outline is 2 pixels thick
 
     // Corner base yards (6x6 quadrants) in each player's color
 static const Color baseColors[4] = {RED, BLUE, YELLOW, GREEN};
     static const int qr[4] = {0, 0, 9, 9}; // quadrant row offsets (Red=TL, Blue=TR, Green=BR, Yellow=BL)
     static const int qc[4] = {0, 9, 9, 0};
     for (int p = 0; p < MAX_PLAYERS; p++) {
-        Color c = baseColors[p];
+        Color c = baseColors[p];//Gets the current player's color
         DrawRectangle((int)(LUDO_X + qc[p] * LUDO_CELL), (int)(LUDO_Y + qr[p] * LUDO_CELL),
                       (int)(6 * LUDO_CELL), (int)(6 * LUDO_CELL),
-                      (Color){c.r, c.g, c.b, 60});
+                      (Color){c.r, c.g, c.b, 60});//draws each player's 6×6 base area
     }
 
     // Center 3x3 finish square
     DrawRectangle((int)(LUDO_X + 6 * LUDO_CELL), (int)(LUDO_Y + 6 * LUDO_CELL),
-                  (int)(3 * LUDO_CELL), (int)(3 * LUDO_CELL), (Color){230, 226, 210, 255});
+                  (int)(3 * LUDO_CELL), (int)(3 * LUDO_CELL), (Color){230, 226, 210, 255});//makes the player's base semi-transparent
     DrawRectangleLinesEx((Rectangle){LUDO_X + 6 * LUDO_CELL, LUDO_Y + 6 * LUDO_CELL,
                          3 * LUDO_CELL, 3 * LUDO_CELL}, 2, (Color){80, 70, 50, 255});
 
