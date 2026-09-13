@@ -600,17 +600,17 @@ if (IsKeyPressed(KEY_SPACE) &&
         // ---------------------------------------------------------
         
         //telling Raylib what to display on the screen every frame.
-        BeginDrawing();
-        ClearBackground(BLACK);
+        BeginDrawing();  // will draw about 60 frams per second
+        ClearBackground(BLACK);//This clears whatever was drawn on the screen previously. and fills them with black
 
-        float screenW = (float)GetScreenWidth();
-        float screenH = (float)GetScreenHeight();
+        float screenW = (float)GetScreenWidth();  //current screen width at that moment
+        float screenH = (float)GetScreenHeight();  //current screen height at that moment
 
         // Preserve the 1200x800 aspect ratio so the board is never stretched.
         float scaleX = screenW / (float)WINDOW_W;
         float scaleY = screenH / (float)WINDOW_H;
         float scale = (scaleX < scaleY) ? scaleX : scaleY;
-
+//why storing in float? cus we are storing it in float type to do division later
         gameCamera.target = (Vector2){WINDOW_W / 2.0f, WINDOW_H / 2.0f};
         gameCamera.offset = (Vector2){screenW / 2.0f, screenH / 2.0f};
         gameCamera.zoom = scale;
@@ -624,7 +624,7 @@ if (IsKeyPressed(KEY_SPACE) &&
             battle_draw(&game);
         } else if (game.state == STATE_GAME_OVER) {
             draw_game_over(&game);
-        } else {
+        } else {//Otherwise → draw the actual game board
             board_draw(&game);
             board_draw_hud(&game);
             dice_draw(&dice, WINDOW_W - 150, 430);
@@ -659,43 +659,45 @@ DrawText(
 
 #endif
 
+
+//from here on, we draw the pokemon status bars informations and all
             Player *cur = &game.players[game.currentPlayer];
 
             // Prominent turn announcement: shown before the first roll of a
             // turn and hidden as soon as that player starts rolling.
             if (game.state == STATE_PLAYING && !dice.rolling &&
-                turnRollCount == 0 && !awaitingTokenChoice) {
-                char turnBuf[64];
-                sprintf(turnBuf, "%s's turn", cur->name);
-                int turnFont = 42;
-                int turnX = WINDOW_W / 2 - MeasureText(turnBuf, turnFont) / 2;
-                DrawText(turnBuf, turnX + 3, 18 + 3, turnFont, BLACK);
-                DrawText(turnBuf, turnX, 18, turnFont, cur->color);
-                DrawRectangleLinesEx(
-                    (Rectangle){(float)turnX - 16, 10,
+                turnRollCount == 0 && !awaitingTokenChoice) {  
+                char turnBuf[64];   //creates a character array capable of holding a string.
+                sprintf(turnBuf, "%s's turn", cur->name);//Show the big "BLUE'S turn" announcement only at the beginning of their turn, before their first roll.
+                int turnFont = 22;
+                int turnX = WINDOW_W / 2 - MeasureText(turnBuf, turnFont) / 2;// centering the text
+                DrawText(turnBuf, turnX + 3, 18 + 3, turnFont, BLACK);   //blues turn text the double layer text, niche black shadow ttype, upore main text
+                DrawText(turnBuf, turnX, 18, turnFont, cur->color);  //eije main text er colour ta antese
+                DrawRectangleLinesEx(//now we draw a rectangular box around it
+                    (Rectangle){(float)turnX - 16, 10,    //x,y,width,height
                                 (float)MeasureText(turnBuf, turnFont) + 32,
                                 56},
                     2, cur->color);
             }
 
             if (game.mode == MODE_CLASSIC) {
-                char line[256] = "";
+                char line[256] = "";// creating empty string ->1:Pikachu[base]  2:Charizard[23]  3:Eevee[home 4]  4:Bulbasaur[goal]
                 for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
                     Token *t = &cur->tokens[i];
                     char part[64];
-                    if (t->state == TOKEN_BASE)
-                        sprintf(part, "%d:%s[base]", i + 1, t->pokemon.name);
-                    else if (t->state == TOKEN_FINISHED)
+                    if (t->state == TOKEN_BASE)                               // checks if token is in the base
+                        sprintf(part, "%d:%s[base]", i + 1, t->pokemon.name);//"1:Pikachu[base]"
+                    else if (t->state == TOKEN_FINISHED)                     //If the token reached the goal:
                         sprintf(part, "%d:%s[goal]", i + 1, t->pokemon.name);
                     else if (t->state == TOKEN_HOME)
-                        sprintf(part, "%d:%s[home%d]", i + 1, t->pokemon.name, t->progress - SHARED_TRACK_STEPS);
+                        sprintf(part, "%d:%s[home%d]", i + 1, t->pokemon.name, t->progress - SHARED_TRACK_STEPS);// colourful steps gula
                     else
                         sprintf(part, "%d:%s[%d]", i + 1, t->pokemon.name,
                                 GetSharedBoardSquare(game.currentPlayer, t->progress));
-                    strncat(line, part, sizeof(line) - strlen(line) - 1);
-                    strncat(line, "  ", sizeof(line) - strlen(line) - 1);
+                    strncat(line, part, sizeof(line) - strlen(line) - 1);//the thirsd argument is to prevent overflow
+                    strncat(line, "  ", sizeof(line) - strlen(line) - 1);//This adds two spaces.  ->  1:Pikachu[base]  2:Charizard[25]
                 }
-                DrawText(line, 20, 48, 14, (Color){180, 180, 200, 255});
+                DrawText(line, 20, 48, 16, (Color){255, 255, 255, 255});//16 ta mathay rekho
 
                 if (turnRollCount > 0) {
                     char rollsBuf[160] = "Rolls: ";
@@ -705,7 +707,7 @@ DrawText(
                             sprintf(part, "[%d] ", turnRolls[r]);
                         else
                             sprintf(part, "%d ", turnRolls[r]);
-                        strncat(rollsBuf, part, sizeof(rollsBuf) - strlen(rollsBuf) - 1);
+                        strncat(rollsBuf, part, sizeof(rollsBuf) - strlen(rollsBuf) - 1);//capacity - used letters-'\0'
                     }
                     DrawText(rollsBuf, 20, 78, 18, WHITE);
                 }
