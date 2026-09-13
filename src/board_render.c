@@ -1,18 +1,18 @@
-#include "game.h"
-#include "board.h"
+#include "game.h"         //gives this file access to things defined there, such as game,player,token,sq type etc.
+#include "board.h"        //allows board_render.c to work with the board functionality
 #include "board_render.h"
-#include "pokemon.h"
+#include "pokemon.h"      //Allows this file to use Pokémon-related functions
 #include <stdio.h>
 
-#define CELL_SIZE 100
-#define BOARD_X 60
-#define BOARD_Y 140
+#define CELL_SIZE 100     //This represents the size of a board cell in pixels in whichever drawing code uses it
+#define BOARD_X 60        
+#define BOARD_Y 140       //These define the position of the board
 
 // Classic Ludo layout (must match board.c)
-#define LUDO_GRID 15
-#define LUDO_CELL 44.0f
-#define LUDO_X 30.0f
-#define LUDO_Y 100.0f
+#define LUDO_GRID 15    //the Classic Ludo board is treated as a 15 × 15 grid
+#define LUDO_CELL 44.0f//Each grid cell is 44 pixels wide/high;Because Raylib's drawing/position calculations often use floating-point values
+#define LUDO_X 30.0f   
+#define LUDO_Y 100.0f  //These specify where the 15×15 Ludo grid starts on the screen
 
 static Color square_color(SquareType t) {
     switch (t) {

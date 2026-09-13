@@ -141,18 +141,25 @@ static void resolve_battle(Game *g) {
             g->players[def].wins++;
         }
     } 
-    else // if the attack occurs in ladder mode
-    {
-        g->players[atk].pokemon.hp = g->battle.attackerHp;// no token tension, pokemon is stored directly under player
-        g->players[def].pokemon.hp = g->battle.defenderHp;
-        if (g->battle.attackerWon) {
-            g->players[def].position = 0;// if someone loses they are sent back to starting square 0
-            g->players[atk].wins++; // winner stays in the square
-        } else {
-            g->players[atk].position = 0;// player is an array of structs btw so each player er under e achhe win ,lose ,pos etc
-            g->players[def].wins++;
-        }
+    else // Ladder mode
+{
+    g->players[atk].pokemon.hp = g->battle.attackerHp;
+    g->players[def].pokemon.hp = g->battle.defenderHp;
+
+    if (g->battle.attackerWon) {
+        // Defender lost → send back to start and restore HP
+        g->players[def].position = 0;
+        g->players[def].pokemon.hp = g->players[def].pokemon.maxHp;
+
+        g->players[atk].wins++;
+    } else {
+        // Attacker lost → send back to start and restore HP
+        g->players[atk].position = 0;
+        g->players[atk].pokemon.hp = g->players[atk].pokemon.maxHp;
+
+        g->players[def].wins++;
     }
+}
 }
 
 //shows game over page ki show korbe 
