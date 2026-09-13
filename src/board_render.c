@@ -135,6 +135,34 @@ static const Color baseColors[4] = {RED, BLUE, YELLOW, GREEN};
             Rectangle r = {hc.x - LUDO_CELL/2, hc.y - LUDO_CELL/2, LUDO_CELL, LUDO_CELL};
             DrawRectangleRec(r, c);
             DrawRectangleLinesEx(r, 1, (Color){10, 10, 15, 255});
+            // Poké Ball in the center destination
+if (g->pokeballTexture.id != 0) {
+
+    float ballSize = 100.0f;
+
+    Rectangle source = {
+        0,
+        0,
+        (float)g->pokeballTexture.width,
+        (float)g->pokeballTexture.height
+    };
+
+    Rectangle destination = {
+        LUDO_X + 7.5f * LUDO_CELL - ballSize / 2.0f,
+        LUDO_Y + 7.5f * LUDO_CELL - ballSize / 2.0f,
+        ballSize,
+        ballSize
+    };
+
+    DrawTexturePro(
+        g->pokeballTexture,
+        source,
+        destination,
+        (Vector2){0, 0},
+        0.0f,
+        WHITE
+    );
+}
         }
     }
 
