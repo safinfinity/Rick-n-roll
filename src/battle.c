@@ -182,9 +182,10 @@ void battle_draw(Game *g) {
         textY += 24;
     }
 
-    char rollBuf[32];
-    sprintf(rollBuf, "Battle continues until HP reaches 0");
-    DrawText(rollBuf, boxX + 24, textY, 16, WHITE);
+    // char rollBuf[32];
+    // sprintf(rollBuf, "Battle continues until HP reaches 0");
+    // DrawText(rollBuf, boxX + 24, textY, 16, WHITE);
+    DrawText("Battle continues until HP reaches 0", boxX + 24, textY, 16, WHITE);
     textY += 24;
 
     if (!b->finished) {

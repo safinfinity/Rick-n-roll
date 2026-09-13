@@ -44,22 +44,22 @@ void game_reset(Game *g) {      //to reset the game
 }
 
 // Process one dice roll in battle
-void battle_roll(Game *g) {
+void battle_roll(Game *g) {    //handles one dice roll during a Pokémon battle
     // Battles are no longer limited to a fixed number of dice rolls.
     // They continue until one Pokemon reaches 0 HP.
-    int roll = GetRandomValue(1, 6);
-    g->battle.currentRoll = roll;
-    int atkType, defType;
-    if (g->mode == MODE_CLASSIC) {
-        atkType = (int)g->players[g->battle.attackerIdx].tokens[g->battle.attackerToken].pokemon.type;
-        defType = (int)g->players[g->battle.defenderIdx].tokens[g->battle.defenderToken].pokemon.type;
+    int roll = GetRandomValue(1, 6);   //raylib function
+    g->battle.currentRoll = roll;      //Take the dice number we just generated and save it as the current battle roll.
+    int atkType, defType;              //Will store the attacker and defender Pokémon's type            
+    if (g->mode == MODE_CLASSIC) {     
+        atkType = (int)g->players[g->battle.attackerIdx].tokens[g->battle.attackerToken].pokemon.type;     //Find the attacker's Pokémon and get its type,since player gives an enum value,its converted to int
+        defType = (int)g->players[g->battle.defenderIdx].tokens[g->battle.defenderToken].pokemon.type;     //Find the defender's Pokémon and get its type,since player gives an enum value,its converted to int
     } else {
-        atkType = (int)g->players[g->battle.attackerIdx].pokemon.type;
+        atkType = (int)g->players[g->battle.attackerIdx].pokemon.type;      //finds the attacking player,its pokemon and its type,and converts it to an integer
         defType = (int)g->players[g->battle.defenderIdx].pokemon.type;
     }
 // Check actual Pokemon type advantages
-bool atkAdvantage = poke_type_advantage(
-    (PokeType)atkType,
+bool atkAdvantage = poke_type_advantage(      //Does the attacker's type have an advantage over the defender's type?
+    (PokeType)atkType,               //coverts from int to poketype
     (PokeType)defType
 );
 
@@ -69,21 +69,21 @@ bool defAdvantage = poke_type_advantage(
 );
 
 // Get the actual Pokemon stats
-int atkStat;
-int defStat;
-int defenderDef;
+int atkStat;             //stores Attacker's ATK stat.
+int defStat;             //stores Defenders atk stat.
+int defenderDef;         //Stores the defender Pokémon's DEF stat.
 int attackerDef;
 
 if (g->mode == MODE_CLASSIC) {
     Pokemon *atkPokemon =
         &g->players[g->battle.attackerIdx]
-             .tokens[g->battle.attackerToken].pokemon;
+             .tokens[g->battle.attackerToken].pokemon; //pointer to a Pokemon structure;Find the attacker's Pokémon and store its address in atkPokemon.
 
     Pokemon *defPokemon =
         &g->players[g->battle.defenderIdx]
-             .tokens[g->battle.defenderToken].pokemon;
+             .tokens[g->battle.defenderToken].pokemon;   //atkPokemon and defPokemon point to the actual Pokémon stored in the game.
 
-    atkStat = atkPokemon->atk;
+    atkStat = atkPokemon->atk;      //Access the atk member of the Pokémon pointed to by atkPokemon.
     defStat = defPokemon->atk;
 
     defenderDef = defPokemon->def;
@@ -91,7 +91,7 @@ if (g->mode == MODE_CLASSIC) {
 
 } else {
 
-    atkStat = g->players[g->battle.attackerIdx].pokemon.atk;
+    atkStat = g->players[g->battle.attackerIdx].pokemon.atk;   //attacking player,their pokemon,atk and stored in atk stat
     defStat = g->players[g->battle.defenderIdx].pokemon.atk;
 
     defenderDef = g->players[g->battle.defenderIdx].pokemon.def;
@@ -104,7 +104,7 @@ int defDamage = defStat;
 
 // Type advantage = 50% more damage
 if (atkAdvantage) {
-    atkDamage = (atkDamage * 3) / 2;
+    atkDamage = (atkDamage * 3) / 2;      //if attacker has type advantage, increase damage by 50%(1.5 times)
 }
 
 if (defAdvantage) {
@@ -113,12 +113,12 @@ if (defAdvantage) {
 
 // Rolling 6 = critical hit
 if (roll == 6) {
-    atkDamage *= 2;
+    atkDamage *= 2;   //damage is doubled,regardless of a type advantage
     defDamage *= 2;
 }
 
 // DEF reduces incoming damage
-atkDamage -= defenderDef;
+atkDamage -= defenderDef;     //attackers atk damage-defenders def damage=final damage
 defDamage -= attackerDef;
 
 // Always deal at least 1 damage
@@ -132,14 +132,14 @@ if (defDamage < 1)
 g->battle.defenderHp -= atkDamage;
 g->battle.attackerHp -= defDamage;
     // Clamp
-    if (g->battle.defenderHp < 0) g->battle.defenderHp = 0;
+    if (g->battle.defenderHp < 0) g->battle.defenderHp = 0;        //Don't allow HP to go below 0.
     if (g->battle.attackerHp < 0) g->battle.attackerHp = 0;
 
 // Battle message
 if (atkAdvantage && defAdvantage) {
     sprintf(g->battle.message,
             "Roll %d: Both have type advantage!",
-            roll);
+            roll);      //sprintf → build a sentence → put it into message;
 
 } else if (atkAdvantage && roll == 6) {
     sprintf(g->battle.message,
@@ -147,12 +147,12 @@ if (atkAdvantage && defAdvantage) {
 
 } else if (defAdvantage && roll == 6) {
     sprintf(g->battle.message,
-            "CRITICAL! Defender strikes back!");
+            "CRITICAL! Defender strikes back!");     //The defender had the advantage and got a critical hit
 
 } else if (atkAdvantage) {
     sprintf(g->battle.message,
             "Roll %d: Super effective!",
-            roll);
+            roll);    //"Super effective" means the attacker's Pokémon has a type advantage.
 
 } else if (defAdvantage) {
     sprintf(g->battle.message,
@@ -174,49 +174,49 @@ if (atkAdvantage && defAdvantage) {
     if (g->battle.defenderHp <= 0 || g->battle.attackerHp <= 0) {
         g->battle.finished = true;
         if (g->battle.defenderHp <= 0 && g->battle.attackerHp > 0) {
-            g->battle.attackerWon = true;
+            g->battle.attackerWon = true;                     //the defender lost while the attacker survived.
             sprintf(g->battle.message, "%s wins the battle!",
                     g->players[g->battle.attackerIdx].name);
         } else {
             g->battle.attackerWon = false;
             sprintf(g->battle.message, "%s wins the battle!",
-                    g->players[g->battle.defenderIdx].name);
+                    g->players[g->battle.defenderIdx].name);  //The attacker did not win.
         }
     }
 }
 
 // Update player HP after battle
 void battle_end(Game *g) {
-    int atk = g->battle.attackerIdx;
-    int def = g->battle.defenderIdx;
+    int atk = g->battle.attackerIdx;    //creates an integer and stores attacker players idex in it
+    int def = g->battle.defenderIdx;    
 
-    g->players[atk].pokemon.hp = g->battle.attackerHp;
+    g->players[atk].pokemon.hp = g->battle.attackerHp;  //takes the HP stored in the battle and saves it back into the player's Pokémon
     g->players[def].pokemon.hp = g->battle.defenderHp;
 
     if (g->battle.attackerWon) {
         // Defender goes back to start
-        g->players[def].position = 0;
-        g->players[atk].wins++;
+        g->players[def].position = 0;      //the defender's player/token is sent back to the starting/base position
+        g->players[atk].wins++;            //++ means increase win by 1
     } else {
         // Attacker goes back to start
-        g->players[atk].position = 0;
+        g->players[atk].position = 0;    //Send the attacker back to position 0
         g->players[def].wins++;
     }
 
-    g->state = STATE_PLAYING;
+    g->state = STATE_PLAYING;     //The battle is finished, so return to the normal Ludo gameplay
 }
 
 // Main game update
-void game_update(Game *g) {
+void game_update(Game *g) {            //to update the game depending on its current state
     if (g->state == STATE_BATTLE) {
-        if (g->battle.messageTimer > 0) g->battle.messageTimer--;
+        if (g->battle.messageTimer > 0) g->battle.messageTimer--;    //used to control how long the battle message stays active
         return; // wait for space press to advance
     }
     if (g->state == STATE_BATTLE_RESULT) {
-        if (IsKeyPressed(KEY_SPACE)) {
+        if (IsKeyPressed(KEY_SPACE)) {     //a raylib function,checks whether a particular keyboard key was pressed
             battle_end(g);
             // Advance to next player
-            g->currentPlayer = (g->currentPlayer + 1) % g->playerCount;
+            g->currentPlayer = (g->currentPlayer + 1) % g->playerCount;      //After the battle, give the turn to the next player
         }
         return;
     }

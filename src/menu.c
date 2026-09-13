@@ -25,7 +25,7 @@ static Vector2 GetVirtualMousePosition(void)
     };
 }
 // why -150? we want to show classic and ladder at teh center of width 1200, and its own width is 300 so 300/2
-static Rectangle classicBtn = {WINDOW_W/2 - 150, 280, 300, 60};//{x,y,width,height}
+static Rectangle classicBtn = {WINDOW_W/2 - 150, 280, 300, 60};   //{x,y,width,height}
 static Rectangle ladderBtn  = {WINDOW_W/2 - 150, 370, 300, 60};
 static Rectangle p2Btn      = {WINDOW_W/2 - 180, 260, 160, 50};
 static Rectangle p3Btn      = {WINDOW_W/2 + 20, 260, 160, 50};
@@ -107,35 +107,5 @@ void menu_draw(Game *g) {
         }
     }
 
-    if (g->state == STATE_GAME_OVER) {
-        DrawRectangle(0, 0, WINDOW_W, WINDOW_H, (Color){15, 15, 35, 220});
-
-        int winner = -1;
-        for (int i = 0; i < g->playerCount; i++) {
-            if (g->players[i].finished && g->players[i].finishOrder == 1) {
-                winner = i;
-                break;
-            }
-        }
-        if (winner == -1) {
-            for (int i = 0; i < g->playerCount; i++) {
-                if (g->players[i].position == BOARD_SQUARES) {
-                    winner = i;
-                    break;
-                }
-            }
-        }
-
-        if (winner >= 0) {
-            char buf[64];
-            snprintf(buf, sizeof(buf), "%s WINS!", g->players[winner].name);
-            DrawText(buf, WINDOW_W/2 - MeasureText(buf, 48)/2, 250, 48, GOLD);
-            DrawText(TextFormat("Pokemon: %s", g->players[winner].pokemon.name),
-                     WINDOW_W/2 - MeasureText(TextFormat("Pokemon: %s", g->players[winner].pokemon.name), 22)/2, 330, 22, WHITE);
-        } else {
-            DrawText("GAME OVER", WINDOW_W/2 - MeasureText("GAME OVER", 48)/2, 250, 48, GOLD);
-        }
-
-        DrawText("Press R or ENTER to restart", WINDOW_W/2 - MeasureText("Press R or ENTER to restart", 20)/2, 450, 20, LIGHTGRAY);
-    }
+    
 }
