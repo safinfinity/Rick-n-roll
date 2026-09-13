@@ -141,18 +141,25 @@ static void resolve_battle(Game *g) {
             g->players[def].wins++;
         }
     } 
-    else // if the attack occurs in ladder mode
-    {
-        g->players[atk].pokemon.hp = g->battle.attackerHp;// no token tension, pokemon is stored directly under player
-        g->players[def].pokemon.hp = g->battle.defenderHp;
-        if (g->battle.attackerWon) {
-            g->players[def].position = 0;// if someone loses they are sent back to starting square 0
-            g->players[atk].wins++; // winner stays in the square
-        } else {
-            g->players[atk].position = 0;// player is an array of structs btw so each player er under e achhe win ,lose ,pos etc
-            g->players[def].wins++;
-        }
+    else // Ladder mode
+{
+    g->players[atk].pokemon.hp = g->battle.attackerHp;
+    g->players[def].pokemon.hp = g->battle.defenderHp;
+
+    if (g->battle.attackerWon) {
+        // Defender lost → send back to start and restore HP
+        g->players[def].position = 0;
+        g->players[def].pokemon.hp = g->players[def].pokemon.maxHp;
+
+        g->players[atk].wins++;
+    } else {
+        // Attacker lost → send back to start and restore HP
+        g->players[atk].position = 0;
+        g->players[atk].pokemon.hp = g->players[atk].pokemon.maxHp;
+
+        g->players[def].wins++;
     }
+}
 }
 
 //shows game over page ki show korbe 
@@ -263,7 +270,7 @@ int main(void) {
                 turnRollCount = 0;      //zero dice rolls left for this turn
                 turnRollIndex = 0;
                 sixCount = 0;           // counts koyta 6 marse
-                memset(turnRolls, 0, sizeof(turnRolls));    //fill the full [6] [3] [0] with [0] [0] [0]
+                memset(turnRolls, 0, sizeof(turnRolls));    //fill the full [6] [3] [0] with [0] [0] [0], lets say red made dice rolls 6 3 0, so we make it zero b4 blue rolls
                 game.state = STATE_PLAYING;                 // etokhon shob set kortesilam
             }
         }
@@ -349,16 +356,17 @@ if (IsKeyPressed(KEY_SPACE) &&
 
 #endif
 
+//the dice has finished rolling, what do we do next?
         bool diceJustFinished = wasRolling && !dice.rolling;
         wasRolling = dice.rolling;
         dice_update(&dice);
 
-        if (diceJustFinished && game.state == STATE_PLAYING) {
-            if (game.mode == MODE_CLASSIC) {
-                int rolled = dice.value;
+        if (diceJustFinished && game.state == STATE_PLAYING) { ///preventa dice result logic from running when im in menu, battle game over state
+            if (game.mode == MODE_CLASSIC) {           //use multiple-token + multiple-roll logic
+                int rolled = dice.value;               //store whatever u scored in a single roll , rolled is another variable used for convenience
                 // Store every roll. A 6 grants another roll, but NEVER starts
                 // that roll automatically. The player must press SPACE again.
-                if (turnRollCount < 3) turnRolls[turnRollCount++] = rolled;
+                if (turnRollCount < 3) turnRolls[turnRollCount++] = rolled;  //turnRolls is an array that allows max 3 ta 6 tai array of size 3
 
                 if (rolled == 6) {
                     sixCount++;
@@ -367,34 +375,35 @@ if (IsKeyPressed(KEY_SPACE) &&
                         turnRollCount = 0;
                         turnRollIndex = 0;
                         sixCount = 0;
-                        memset(turnRolls, 0, sizeof(turnRolls));
-                        awaitingTokenChoice = false;
-                        advance_turn(&game);
+                        memset(turnRolls, 0, sizeof(turnRolls)); //[6][6][6]-->[0][0][0]
+                        awaitingTokenChoice = false;            //as we cancelled this turn, we will not wait for token selction for this 6, 3 ta 6 means daan nai, moves to next
+                        advance_turn(&game);                    //moving to next player
                     }
                     // Otherwise wait for SPACE. No movement happens yet.
-                } else {
+                } else {      //use single token movement for ladder
                     // First non-6 ends the rolling phase; all stored values
                     // can now be spent independently.
                     sixCount = 0;
                     turnRollIndex = 0;
                     while (turnRollIndex < turnRollCount) {
                         int value = turnRolls[turnRollIndex];
-                        int pl = game.currentPlayer;
-                        bool any = false;
+                        int pl = game.currentPlayer;     //pl mane current player
+                        bool any = false;                // initially no pokemon is being allowed to use the roll value
                         for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
-                            Token *t = &game.players[pl].tokens[i];
-                            if (CanDeployToken(t, value) || CanMoveToken(t, value)) {
-                                any = true;
+                            Token *t = &game.players[pl].tokens[i];  //checking every pokemon token, lets say rn we checking if 2nd token of red can use the roll value or not
+                            if (CanDeployToken(t, value) || CanMoveToken(t, value)) {  //either use the value to come out of base or move some steps forward
+                                any = true; //if it can then let it use the roll value, now any=true, previously it was false
                                 break;
                             }
-                        }
+                        } 
                         if (any) {
-                            awaitingTokenChoice = true;
+                            awaitingTokenChoice = true;// if the rolled value can be used, wait for player to pick a token
                             break;
                         }
-                        turnRollIndex++;
+                        turnRollIndex++; //lets say 3 ta 6 porse, tokhon toh ar use kora jabena oi dice er rolled value, so go for the next rolling and get a new value and repeat the process
                     }
-                    if (turnRollIndex >= turnRollCount) {
+                    if (turnRollIndex >= turnRollCount) { // if turnRolls 3 size er chhilo and index 3 cross korse yet useable move painai
+                        // cleaning up everything
                         turnRollCount = 0;
                         turnRollIndex = 0;
                         memset(turnRolls, 0, sizeof(turnRolls));
@@ -407,72 +416,76 @@ if (IsKeyPressed(KEY_SPACE) &&
                 Player *cur = &game.players[game.currentPlayer];
                 if (!cur->finished) {
                     int newPos = cur->position + dice.value;
-                    if (newPos > BOARD_SQUARES) newPos = BOARD_SQUARES;
+                    if (newPos > BOARD_SQUARES) newPos = BOARD_SQUARES;// cannot go outside board
                     cur->position = newPos;
-                    if (cur->position > 0) {
-                        for (int i = 0; i < game.playerCount; i++) {
+                    if (cur->position > 0) {                           //checking if inside the board
+                        for (int i = 0; i < game.playerCount; i++) {   //checking every player
                             if (i != game.currentPlayer &&
                                 game.players[i].position == cur->position &&
-                                !game.players[i].finished) {
-                                game.battle.attackerIdx = game.currentPlayer;
-                                game.battle.defenderIdx = i;
-                                game.battle.attackerToken = 0;
+                                !game.players[i].finished) {           //checking if a certain player is my opponent
+
+                                 //current player battleing itself ?, is the other player in the same position as me, is that player still on the board and has not finished yet    
+                                
+                                //starting a battle//
+                                game.battle.attackerIdx = game.currentPlayer;          //marks which player is attacking
+                                game.battle.defenderIdx = i;                           //marks which player is being attacked 
+                                game.battle.attackerToken = 0;                         // in ladder mode each player has only one token and it starts from index zero
                                 game.battle.defenderToken = 0;
-                                game.battle.rollsLeft = 0;
+                                game.battle.rollsLeft = 0;                              //number of dice battle left
                                 game.battle.attackerHp = cur->pokemon.hp;
                                 game.battle.defenderHp = game.players[i].pokemon.hp;
                                 game.battle.attackerMaxHp = cur->pokemon.maxHp;
                                 game.battle.defenderMaxHp = game.players[i].pokemon.maxHp;
-                                game.battle.finished = false;
-                                game.battle.currentRoll = 0;
+                                game.battle.finished = false;                           //initially mark that the dice battle has not finished
+                                game.battle.currentRoll = 0;                            //dice roll kore jei value ta ashe oita initialize kore zero te rakhi amra initially
                                 sprintf(game.battle.message, "BATTLE! %s vs %s!", cur->name, game.players[i].name);
-                                game.battle.messageTimer = 60;
-                                game.state = STATE_BATTLE;
+                                game.battle.messageTimer = 60;// keeps battle msg active for roughly 1 second
+                                game.state = STATE_BATTLE;// playing state theke battle state e gelo
                                 break;
                             }
                         }
                     }
                     if (cur->position >= BOARD_SQUARES) {
-                        cur->finished = true;
-                        cur->finishOrder = 1;
+                        cur->finished = true;// covered a whole round
+                        cur->finishOrder = 1;// so u are first
                         for (int i = 0; i < game.playerCount; i++) {
                             if (game.players[i].finished && i != game.currentPlayer)
-                                cur->finishOrder = game.players[i].finishOrder + 1;
+                                cur->finishOrder = game.players[i].finishOrder + 1;//first mane 0th player mane first=1 not zero
                         }
                     }
-                    int finishedCount = 0;
+                    int finishedCount = 0;  //initially keu shesh kore nai
                     for (int i = 0; i < game.playerCount; i++)
-                        if (game.players[i].finished) finishedCount++;
-                    if (finishedCount >= game.playerCount) game.state = STATE_GAME_OVER;
+                        if (game.players[i].finished) finishedCount++;//counting koyjon finish korse
+                    if (finishedCount >= game.playerCount) game.state = STATE_GAME_OVER;//when shobar shesh
                 }
-                if (game.state == STATE_PLAYING) advance_turn(&game);
+                if (game.state == STATE_PLAYING) advance_turn(&game);// eto kisu korar por red er por green ashche 
             }
         }
-
+        //classic mode token selection part
         // Classic mode: spend stored dice values one at a time.
         // Each value is independent: 6,2 may be deploy+move, move+move, etc.
-        if (awaitingTokenChoice && game.state == STATE_PLAYING) {
-            int pick = -1;
-            if (IsKeyPressed(KEY_ONE)) pick = 0;
-            else if (IsKeyPressed(KEY_TWO)) pick = 1;
-            else if (IsKeyPressed(KEY_THREE)) pick = 2;
-            else if (IsKeyPressed(KEY_FOUR)) pick = 3;
+        if (awaitingTokenChoice && game.state == STATE_PLAYING) {          //awaitingTokenChoice is a bool thats true if fame is waiting for us to choose a token, false if no token is allwoed to be picked currently
+            int pick = -1;                                                 //pick will store which token is selected
+            if (IsKeyPressed(KEY_ONE)) pick = 0;                           // token 1
+            else if (IsKeyPressed(KEY_TWO)) pick = 1;                       //token 2
+            else if (IsKeyPressed(KEY_THREE)) pick = 2;                     //token 3
+            else if (IsKeyPressed(KEY_FOUR)) pick = 3;                      //token 4
 
-            if (pick >= 0 && turnRollIndex < turnRollCount) {
-                int pl = game.currentPlayer;
-                int roll = turnRolls[turnRollIndex];
+            if (pick >= 0 && turnRollIndex < turnRollCount) {               //checking if thats a valid solution
+                int pl = game.currentPlayer;                                //find the current player
+                int roll = turnRolls[turnRollIndex];                        //assigne the rolled dice value
             
-                Token *t = &game.players[pl].tokens[pick];
-                bool used = false;
-                bool battled = false;
+                Token *t = &game.players[pl].tokens[pick];                  //eto number player er eto number token er address
+                bool used = false;                      //initially used hoynai oi dice roll
+                bool battled = false;                   //initially no battle has started from this move
 
-                if (CanDeployToken(t, roll)) {
-                    t->state = TOKEN_ACTIVE;
-                    t->progress = 1;
-                    used = true;
-                } else if (CanMoveToken(t, roll)) {
-                    MoveToken(t, roll);
-                    used = true;
+                if (CanDeployToken(t, roll)) {          //base theke ber hote parbe if 6 pore?
+                    t->state = TOKEN_ACTIVE;       //token er current state, token base theke ber hoise,before it was TOKEN_HOME
+                    t->progress = 1;                //Put the token at progress position 1
+                    used = true;                      //successfully used the dice roll 
+                } else if (CanMoveToken(t, roll)) {     //naki onno ekta guti k shamne agaba
+                    MoveToken(t, roll);                                     //if the token can move then move it
+                    used = true;                                            //and mark the this dice roll has been used
                     if (t->state == TOKEN_ACTIVE) {
                         int sq = GetSharedBoardSquare(pl, t->progress);
                         int oppToken = -1;
