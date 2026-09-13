@@ -1,8 +1,6 @@
-#ifndef GAME_H
-#define GAME_H
-#define DEBUG_DICE 1
 #ifndef GAME_H    //#ifndef means "if not defined",prevents the header file from being included more than once
 #define GAME_H    //If GAME_H hasn't been defined, this line defines it
+#define DEBUG_DICE 1
 
 #include "raylib.h"      //includes Raylib's header file for its types and functions
 #include <stdbool.h>     //To use Boolean values such as bool, true, and false.
