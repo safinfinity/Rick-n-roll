@@ -413,7 +413,7 @@ if (IsKeyPressed(KEY_SPACE) &&
                     cur->position = newPos;
                     if (cur->position > 0) {                           //checking if inside the board
                         for (int i = 0; i < game.playerCount; i++) {   //checking every player
-                            if (i != game.currentPlayer &&
+                            if (i != game.currentPlayer &&              //initializing an attack
                                 game.players[i].position == cur->position &&
                                 !game.players[i].finished) {           //checking if a certain player is my opponent
 
@@ -479,38 +479,41 @@ if (IsKeyPressed(KEY_SPACE) &&
                 } else if (CanMoveToken(t, roll)) {     //naki onno ekta guti k shamne agaba
                     MoveToken(t, roll);                                     //if the token can move then move it
                     used = true;                                            //and mark the this dice roll has been used
-                    if (t->state == TOKEN_ACTIVE) {
-                        int sq = GetSharedBoardSquare(pl, t->progress);
-                        int oppToken = -1;
-                        int opp = find_opponent_on(&game, sq, pl, &oppToken);
-                        if (opp >= 0 && !IsSafeSquare(sq)) {
-                            start_battle_tokens(&game, pl, pick, opp, oppToken);
-                            battled = true;
+                    if (t->state == TOKEN_ACTIVE) {                         //checking if the token we wanna use is at home or in the board
+                        
+                        // finding present board square where the token landed using the dice roll value
+                        int sq = GetSharedBoardSquare(pl, t->progress);     //progress means current block where the token will be now, if it was 4 and u score 5, current progress=4+5=9
+                        int oppToken = -1;                                  //creating a variable to see Which token of the opponent is sitting on this square? 
+                        int opp = find_opponent_on(&game, sq, pl, &oppToken);//Is there an opponent's token on this board square?"
+                        if (opp >= 0 && !IsSafeSquare(sq)) {                 //if opponent is present and we are not on the safe squares wih the opponent then
+                            start_battle_tokens(&game, pl, pick, opp, oppToken);//we call the battle function and stat a battle
+                            battled = true;                         //informing everyone that there wsa a battle
                         }
                     }
                 }
 
                 if (used) {
-                    awaitingTokenChoice = false;
-                    turnRollIndex++;
-                    if (!battled && game.state == STATE_PLAYING) {
-                        check_finish(&game);
-                        if (game.state == STATE_PLAYING) {
-                            while (turnRollIndex < turnRollCount) {
-                                int nextRoll = turnRolls[turnRollIndex];
-                                bool any = false;
-                                for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
+                    awaitingTokenChoice = false;// stop waiting for token selection, token select kore already move kora hoise
+                    turnRollIndex++;            //move to next dice roll [6]->[3][0]
+                    if (!battled && game.state == STATE_PLAYING) {      //If no battle happened AND the game is still being played, continue checking what should happen next.
+                        check_finish(&game);    //this checks whether the current player has completed whatever is necessary to finish.
+                        if (game.state == STATE_PLAYING) {    //"After checking for a finish, are we still playing?" bcs if the game is over we dont need any more processing
+                            while (turnRollIndex < turnRollCount) {//checks if there are still unused dice rolls
+                                int nextRoll = turnRolls[turnRollIndex];     //getting the next roll
+                                bool any = false;                            // checks if any player has any token that can use this dice roll, initialized to zero
+                                for (int i = 0; i < TOKENS_PER_PLAYER; i++) {//goes through all tokens to see who can use this dice value
                                     Token *nt = &game.players[pl].tokens[i];
                                     if (CanDeployToken(nt, nextRoll) || CanMoveToken(nt, nextRoll)) {
                                         any = true;
-                                        break;
+                                        break;//"We found one usable token. Stop checking tokens."
                                     }
                                 }
-                                if (any) {
-                                    awaitingTokenChoice = true;
-                                    break;
+                                if (any) {// ic the dice roll is usuable, pick a token u wanna use 
+                                    awaitingTokenChoice = true;  //thats we are waiting for u to pick a token
+                                    break;                       //if one token can be used we again go to check other tokens, if all token can be used, we must wait for player to make a decision 
+                                //"We found that the next dice roll can be used. Stop checking rolls and wait for the player to choose a token."
                                 }
-                                turnRollIndex++;
+                                turnRollIndex++;  //"Nobody can use this dice roll, so skip it and look at the next one."
                             }
                             if (turnRollIndex >= turnRollCount) {
                                 turnRollCount = 0;
@@ -527,11 +530,11 @@ if (IsKeyPressed(KEY_SPACE) &&
 
         // Handle battle input
         if (game.state == STATE_BATTLE) {
-            if (game.battle.messageTimer > 0) game.battle.messageTimer--;
-            if (game.battle.finished) {
-                if (IsKeyPressed(KEY_SPACE)) {
-                    resolve_battle(&game);
-                    game.state = STATE_PLAYING;
+            if (game.battle.messageTimer > 0) game.battle.messageTimer--;//messageTimer controls how long a battle message stays on screen
+            if (game.battle.finished) {// if battle finished, then we can prepare battle result
+                if (IsKeyPressed(KEY_SPACE)) {  //this take us from battle state to either game over or playing state , so we wait for space
+                    resolve_battle(&game);    //gives us the results of the battle, hp count and all
+                    game.state = STATE_PLAYING;// abr back to game
                     if (game.mode == MODE_CLASSIC) {
                         // The triggering roll was already spent. Continue with
                         // the next stored roll, if one remains.
@@ -573,21 +576,23 @@ if (IsKeyPressed(KEY_SPACE) &&
         // Handle game over
         if (game.state == STATE_GAME_OVER) {
             if (IsKeyPressed(KEY_SPACE)) {
-                game_init(&game);
-                load_poke_sprites(&game);
-                dice = (Dice){0};
-                awaitingTokenChoice = false;
+                game_init(&game);// if we press space after the game over state, the game is re-initialized
+                load_poke_sprites(&game);//needed pokemon images again for the new game
+                dice = (Dice){0};// a zero initialized dice structure re created
+                awaitingTokenChoice = false;// we are starting fresh so we are not waiting for anyone to choose a token
                 turnRollCount = 0;
                 turnRollIndex = 0;
                 sixCount = 0;
                 memset(turnRolls, 0, sizeof(turnRolls));
             }
-        }
+        }// fresh new game 
 
         // ---------------------------------------------------------
         // DRAW AT THE LOGICAL 1200x800 GAME COORDINATES.
         // Camera2D scales those coordinates to the current window size.
         // ---------------------------------------------------------
+        
+        //telling Raylib what to display on the screen every frame.
         BeginDrawing();
         ClearBackground(BLACK);
 
