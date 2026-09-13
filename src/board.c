@@ -87,6 +87,7 @@ void MoveToken(Token *t, int dice) {
 void SendTokenToBase(Token *t) {
     t->progress = 0;
     t->state = TOKEN_BASE;
+    t->pokemon.hp = t->pokemon.maxHp; // reset HP when returning to base
 }
 
 // Home lanes run 6 cells from the shared-track entry straight into the center.
