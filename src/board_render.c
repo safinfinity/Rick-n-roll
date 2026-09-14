@@ -108,53 +108,53 @@ static const Color baseColors[4] = {RED, BLUE, YELLOW, GREEN};
     }
 
     // Center 3x3 finish square
-    DrawRectangle((int)(LUDO_X + 6 * LUDO_CELL), (int)(LUDO_Y + 6 * LUDO_CELL),
+    DrawRectangle((int)(LUDO_X + 6 * LUDO_CELL), (int)(LUDO_Y + 6 * LUDO_CELL),//draws the center rectangle
                   (int)(3 * LUDO_CELL), (int)(3 * LUDO_CELL), (Color){230, 226, 210, 255});//makes the player's base semi-transparent
     DrawRectangleLinesEx((Rectangle){LUDO_X + 6 * LUDO_CELL, LUDO_Y + 6 * LUDO_CELL,
-                         3 * LUDO_CELL, 3 * LUDO_CELL}, 2, (Color){80, 70, 50, 255});
+                         3 * LUDO_CELL, 3 * LUDO_CELL}, 2, (Color){80, 70, 50, 255});//This draws an outline around the center 3×3 area
 
     // Shared 52-square track
     for (int i = 0; i < BOARD_SIZE; i++) {
-        BoardSquare *sq = &g->board[i];
-        Vector2 c = sq->screenPos;
-        Rectangle r = {c.x - LUDO_CELL/2, c.y - LUDO_CELL/2, LUDO_CELL, LUDO_CELL};
+        BoardSquare *sq = &g->board[i];//sq is a pointer to the current BoardSquare
+        Vector2 c = sq->screenPos;     //stores the board square's screen position
+        Rectangle r = {c.x - LUDO_CELL/2, c.y - LUDO_CELL/2, LUDO_CELL, LUDO_CELL};//Rectangle is a Raylib type,c represents the center of the square
         DrawRectangleRec(r, square_color(sq->type));
         DrawRectangleLinesEx(r, 1, (Color){100, 90, 70, 255});
 
-        char id[4];
-        sprintf(id, "%d", sq->id);
-        int fs = (sq->id < 10) ? 10 : 8;
+        char id[4];//will store the board square number as text
+        sprintf(id, "%d", sq->id);//sprintf() converts/formats data into a string
+        int fs = (sq->id < 10) ? 10 : 8;//If the ID is less than 10, use font size 10; otherwise use font size 8
         DrawText(id, (int)(c.x - fs/2), (int)(c.y - 8), fs, (Color){80, 70, 50, 170});
     }
 
     // Home lanes (private, 6 cells per player, inward toward center)
     for (int p = 0; p < MAX_PLAYERS; p++) {
-        Color c = baseColors[p];
+        Color c = baseColors[p];//Color c = baseColors[p]
         for (int i = 0; i < HOME_STEPS; i++) {
             Vector2 hc = g->homeLanePos[p][i];
             Rectangle r = {hc.x - LUDO_CELL/2, hc.y - LUDO_CELL/2, LUDO_CELL, LUDO_CELL};
-            DrawRectangleRec(r, c);
-            DrawRectangleLinesEx(r, 1, (Color){10, 10, 15, 255});
+            DrawRectangleRec(r, c);//Draws the home cell using the player's color
+            DrawRectangleLinesEx(r, 1, (Color){10, 10, 15, 255});//Draws a 1-pixel dark border around the home cell
             // Poké Ball in the center destination
-if (g->pokeballTexture.id != 0) {
+if (g->pokeballTexture.id != 0) {//Check whether the Poké Ball texture was successfully loaded
 
     float ballSize = 100.0f;
 
     Rectangle source = {
         0,
         0,
-        (float)g->pokeballTexture.width,
+        (float)g->pokeballTexture.width,//uses the whole Poké Ball image
         (float)g->pokeballTexture.height
     };
 
     Rectangle destination = {
-        LUDO_X + 7.5f * LUDO_CELL - ballSize / 2.0f,
+        LUDO_X + 7.5f * LUDO_CELL - ballSize / 2.0f,//Where should the Poké Ball appear and how large should it be
         LUDO_Y + 7.5f * LUDO_CELL - ballSize / 2.0f,
         ballSize,
         ballSize
     };
 
-    DrawTexturePro(
+    DrawTexturePro(//draws the Poké Ball texture
         g->pokeballTexture,
         source,
         destination,
@@ -169,45 +169,45 @@ if (g->pokeballTexture.id != 0) {
     // Base yards: label each corner quadrant with the player's initial
 static const char* baseNames[4] = {"R", "B", "Y", "G"};
     for (int p = 0; p < MAX_PLAYERS; p++) {
-        float minx = 1e9f, miny = 1e9f, maxx = -1e9f, maxy = -1e9f;
+        float minx = 1e9f, miny = 1e9f, maxx = -1e9f, maxy = -1e9f;//This initializes extreme values
         for (int i = 0; i < TOKENS_PER_PLAYER; i++) {
-            Vector2 c = g->basePos[p][i];
-            if (c.x < minx) minx = c.x;
+            Vector2 c = g->basePos[p][i];//Gets the position of token i belonging to player p
+            if (c.x < minx) minx = c.x;//If this token's x-coordinate is smaller than the current minimum,Make it the new minimum x
             if (c.x > maxx) maxx = c.x;
             if (c.y < miny) miny = c.y;
             if (c.y > maxy) maxy = c.y;
         }
-        DrawRectangle((int)(minx - LUDO_CELL/2 - 4), (int)(miny - LUDO_CELL/2 - 4),
+        DrawRectangle((int)(minx - LUDO_CELL/2 - 4), (int)(miny - LUDO_CELL/2 - 4),//creates a colored background around the four token positions
                       (int)(maxx - minx + LUDO_CELL + 8), (int)(maxy - miny + LUDO_CELL + 8),
                       (Color){baseColors[p].r, baseColors[p].g, baseColors[p].b, 70});
-        DrawRectangleLines((int)(minx - LUDO_CELL/2 - 4), (int)(miny - LUDO_CELL/2 - 4),
+        DrawRectangleLines((int)(minx - LUDO_CELL/2 - 4), (int)(miny - LUDO_CELL/2 - 4),//Draws the outline of that base area using the player's full color
                            (int)(maxx - minx + LUDO_CELL + 8), (int)(maxy - miny + LUDO_CELL + 8), baseColors[p]);
         DrawText(baseNames[p], (int)(minx - 5), (int)(maxy + 4), 14, baseColors[p]);
     }
 
     // Tokens
     int drawn[BOARD_SIZE];
-    for (int i = 0; i < BOARD_SIZE; i++) drawn[i] = 0;
+    for (int i = 0; i < BOARD_SIZE; i++) drawn[i] = 0;//Initially, no tokens have been drawn on any square
     Vector2 center = {LUDO_X + 7.5f * LUDO_CELL, LUDO_Y + 7.5f * LUDO_CELL};
 
-    for (int p = 0; p < g->playerCount; p++) {
+    for (int p = 0; p < g->playerCount; p++) {//it loops only through the actual number of players currently playing
         Player *pl = &g->players[p];
         for (int k = 0; k < TOKENS_PER_PLAYER; k++) {
             Token *t = &pl->tokens[k];
             Vector2 pos;
-            if (t->state == TOKEN_BASE) {
+            if (t->state == TOKEN_BASE) {//If the token is still in its base,Use its base position
                 pos = g->basePos[p][k];
-            } else if (t->state == TOKEN_FINISHED) {
+            } else if (t->state == TOKEN_FINISHED) {//If the token reached the goal, place it in the center
                 pos = (Vector2){center.x + (k % 2) * 16 - 8, center.y + (k / 2) * 16 - 8};
             } else if (t->state == TOKEN_HOME) {
                 pos = g->homeLanePos[p][t->progress - SHARED_TRACK_STEPS - 1];
             } else {
-                int sq = GetSharedBoardSquare(p, t->progress);
+                int sq = GetSharedBoardSquare(p, t->progress);//This function calculates which board square the player/token should visually occupy based on
                 int idx = sq - 1;
                 pos = g->board[idx].screenPos;
                 int off = drawn[idx]++;
-                pos.x += (off % 2) * 16 - 8;
-                pos.y += (off / 2) * 16 - 8;
+                pos.x += (off % 2) * 16 - 8;//If two tokens share a square, one is shifted left and one right.
+                pos.y += (off / 2) * 16 - 8;//This creates rows
             }
             draw_token_small(g, t, pl, pos);
         }
@@ -222,7 +222,7 @@ void board_draw(Game *g) {
 
     // Ladder mode: existing 30-square serpentine board
     for (int i = 0; i < BOARD_SQUARES; i++) {
-        BoardSquare *sq = &g->board[i];
+        BoardSquare *sq = &g->board[i];//Gets a pointer to the current board square
         Vector2 c = sq->screenPos;
         Rectangle r = {c.x - CELL_SIZE/2, c.y - CELL_SIZE/2, CELL_SIZE, CELL_SIZE};
         Color bg = square_color(sq->type);
@@ -230,7 +230,7 @@ void board_draw(Game *g) {
         DrawRectangleLinesEx(r, 2, (Color){100, 90, 70, 255});
 
         char id[4];
-        sprintf(id, "%d", sq->id);
+        sprintf(id, "%d", sq->id);//Converts the integer ID to text
         int fs = (sq->id < 10) ? 20 : 16;
         DrawText(id, (int)(c.x - fs/2), (int)(c.y - fs/2 - 12), fs, (Color){80, 70, 50, 180});
 
